@@ -21,9 +21,10 @@ connectDB();
  */
 const app = express();
 
-app.use(express.static(process.env.PUBLIC_FOLDER));
-app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(express.static(process.env.PUBLIC_FOLDER));
+app.use("/images", express.static("public/uploads"));
 
 /**
  * Logging
@@ -59,15 +60,15 @@ app.use(cors());
 /**
  * Routes
  */
+app.use("/otp", require("./routes/OtpRoute"));
 app.use("/user", require("./routes/UserRoute"));
 app.use("/auth", require("./routes/AuthRoute"));
 app.use("/test", require("./routes/TestRoute"));
-app.use("/worker", require("./routes/WorkerRoute"));
-app.use("/shopkeeper", require("./routes/ShopkeeperRoute"));
-app.use("/otp", require("./routes/OtpRoute"));
 app.use("/item", require("./routes/ItemRoute"));
-app.use("/service", require("./routes/ServiceRoute"));
+app.use("/worker", require("./routes/WorkerRoute"));
 app.use("/rating", require("./routes/RatingRoute"));
+app.use("/service", require("./routes/ServiceRoute"));
+app.use("/shopkeeper", require("./routes/ShopkeeperRoute"));
 app.use("/serviceOrder", require("./routes/ServiceOrderRoute"));
 
 /**

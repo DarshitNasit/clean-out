@@ -68,11 +68,11 @@ function Login() {
 									<button
 										type="submit"
 										disabled={
-											!(formik.dirty && formik.isValid) || formik.isSubmitting
+											!formik.dirty || !formik.isValid || formik.isSubmitting
 										}
 										className="btn btn-success mr-10"
 									>
-										Sign In
+										{formik.isSubmitting ? "Singing In" : "Sign In"}
 									</button>
 									<button className="btn btn-danger">Forgot Password</button>
 								</div>

@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { dataURLtoFile } from "../utilities/Image";
 
-function Canvas({ captureImage }) {
+const timeout = async (sec) => {
+	await new Promise((resolve) => {
+		setTimeout(resolve, sec * 1000);
+	});
+};
+
+function Canvas({ captureImage, toggleCamera }) {
 	const videoPlayerRef = useRef(null);
 	const [isCaptured, setIsCaptured] = useState(false);
 
@@ -25,6 +31,16 @@ function Canvas({ captureImage }) {
 		};
 	}, []);
 
+	useEffect(() => {
+		const reload = async () => {
+			if (isCaptured) {
+				await timeout(0.5);
+				setIsCaptured(false);
+			}
+		};
+		reload();
+	}, [isCaptured]);
+
 	const takePhoto = useCallback(() => {
 		setIsCaptured(true);
 		const canvas = document.createElement("canvas");
@@ -40,9 +56,14 @@ function Canvas({ captureImage }) {
 	return (
 		<div className="canvas">
 			<video ref={videoPlayerRef} width="480" height="360" />
-			<button className="btn btn-black mt-10" onClick={takePhoto}>
-				Take photo!
-			</button>
+			<div className="buttons">
+				<button type="button" className="btn btn-black mt-10" onClick={takePhoto}>
+					Take photo!
+				</button>
+				<button type="button" className="btn btn-black mt-10 ml-10" onClick={toggleCamera}>
+					Close Camera
+				</button>
+			</div>
 			{isCaptured && <p>Captured</p>}
 		</div>
 	);

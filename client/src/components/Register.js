@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as Yup from "yup";
 import axios from "axios";
 import { Formik, Form, Field, ErrorMessage } from "formik";
@@ -7,7 +7,7 @@ import { useHistory } from "react-router-dom";
 import Footer from "./Footer";
 import Header from "./Header";
 import ErrorText from "./ErrorText";
-import Canvas from "./Canvas";
+import ImageInput from "./ImageInput";
 import ROLE from "../enums/ROLE";
 import RESPONSE from "../enums/RESPONSE";
 import Axios from "../utilities/Axios";
@@ -37,14 +37,13 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 	if (values.role === ROLE.USER) res = await (await axios.post(`/${resource}`, values)).data;
 	else {
 		data = { ...values, profilePicture, proofs };
-		const formData = buildFormData(data);
-		const headers = { "Content-Type": "multipart/form-data" };
+		const { formData, headers } = buildFormData(data);
 		res = await Axios.POST(`/${resource}`, formData, headers);
 	}
 
 	data = res.data;
 	if (res.success === RESPONSE.SUCCESS) {
-		history.push("/");
+		history.push("/login");
 	} else {
 		setError(data.message);
 	}
@@ -52,10 +51,9 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 
 const validationSchema = Yup.object({
 	userName: Yup.string().required("Required"),
-	phone: Yup.string()
-		.required("Required")
-		.matches(/^[0-9]+$/, "Must be only digits")
-		.length(10, "Must be 10 digits"),
+	phone: Yup.string().required("Required"),
+	// .matches(/^[0-9]+$/, "Must be only digits")
+	// .length(10, "Must be 10 digits"),
 	password: Yup.string().required("Required"),
 	confirmPassword: Yup.string()
 		.required("Required")
@@ -70,56 +68,46 @@ const validationSchema = Yup.object({
 	shopName: Yup.string(),
 });
 
+const required = (value) => {
+	return value === "" ? "Required" : null;
+};
+
 function Register() {
 	const [error, setError] = useState(null);
 	const history = useHistory();
 
-	const [profilePicture, setProfilePicture] = useState(null);
+	const [profilePicture, setProfilePicture] = useState("");
 	const [profilePictureError, setProfilePictureError] = useState(null);
 
-	const [proofs, setProofs] = useState([]);
-	const [proofsError, setProofsError] = useState([]);
+	const [proofs, setProofs] = useState(null);
+	const [proofsError, setProofsError] = useState(null);
 
-	const [isCameraOpen, setIsCameraOpen] = useState(false);
-	const [cameraFor, setCameraFor] = useState("default");
+	useEffect(() => {
+		if (profilePicture != null) setProfilePictureError(null);
+		else setProfilePictureError("Required");
+	}, [profilePicture]);
 
-	const onFileUpload = useCallback((event) => {
-		const name = event.target.name;
-		const files = event.target.files;
+	useEffect(() => {
+		if (proofs == null || proofs.length) setProofsError(null);
+		else setProofsError("Required");
+	}, [proofs]);
+
+	const onFileUpload = useCallback((name, files) => {
 		if (name === "profilePicture") {
 			setProfilePictureError(null);
-			setProfilePicture(files[0]);
-		} else {
-			const arr = [files[0]];
-			if (files[1]) arr.push(files[1]);
-			setProofsError(null);
-			setProofs(arr);
-		}
-	}, []);
-
-	const toggleCamera = useCallback((event) => {
-		setIsCameraOpen((prev) => {
-			setCameraFor(prev ? null : event.target.name);
-			return !prev;
-		});
-	}, []);
-
-	const captureImage = (file) => {
-		if (cameraFor === "profilePicture") {
-			setProfilePicture(file);
-		} else {
+			setProfilePicture(files.length ? files[0] : null);
+		} else if (files.length) {
 			setProofs((prev) => {
-				if (prev.length <= 1) return [...prev, file];
-				else return [prev[1], file];
+				const next = prev ? [...prev, ...files] : files;
+				return next.slice(Math.max(next.length - 2, 0));
 			});
+			setProofsError(null);
 		}
-	};
+	}, []);
 
 	return (
 		<>
 			<Header></Header>
-			{isCameraOpen && <Canvas captureImage={captureImage} />}
-
 			<div className="card_container">
 				<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
 				{error ? <ErrorText>{error}</ErrorText> : null}
@@ -210,22 +198,11 @@ function Register() {
 									{formik.values.role === ROLE.SHOPKEEPER && (
 										<div className="form-control">
 											<label htmlFor="proofs">ID Proofs (max 2)</label>
-											<input
-												type="file"
+											<ImageInput
+												name="proofs"
+												onFileUpload={onFileUpload}
 												multiple
-												id="proofs"
-												name="proofs"
-												onChange={onFileUpload}
 											/>
-											<button
-												type="button"
-												className="btn camera"
-												name="proofs"
-												onClick={toggleCamera}
-												disabled={isCameraOpen && cameraFor !== "proofs"}
-											>
-												Camera
-											</button>
 											{proofsError && <ErrorText>{proofsError}</ErrorText>}
 										</div>
 									)}
@@ -235,45 +212,21 @@ function Register() {
 									<div className="form-control-2">
 										<div className="form-control">
 											<label htmlFor="profilePicture">Profile Picture</label>
-											<input
-												type="file"
-												id="profilePicture"
+											<ImageInput
 												name="profilePicture"
-												onChange={onFileUpload}
+												onFileUpload={onFileUpload}
 											/>
-											<button
-												type="button"
-												className="btn camera"
-												name="profilePicture"
-												onClick={toggleCamera}
-												disabled={
-													isCameraOpen && cameraFor !== "profilePicture"
-												}
-											>
-												Camera
-											</button>
 											{profilePictureError && (
 												<ErrorText>{profilePictureError}</ErrorText>
 											)}
 										</div>
 										<div className="form-control">
 											<label htmlFor="proofs">ID Proofs (max 2)</label>
-											<input
-												type="file"
+											<ImageInput
+												name="proofs"
+												onFileUpload={onFileUpload}
 												multiple
-												id="proofs"
-												name="proofs"
-												onChange={onFileUpload}
 											/>
-											<button
-												type="button"
-												className="btn camera"
-												name="proofs"
-												onClick={toggleCamera}
-												disabled={isCameraOpen && cameraFor !== "proofs"}
-											>
-												Camera
-											</button>
 											{proofsError && <ErrorText>{proofsError}</ErrorText>}
 										</div>
 									</div>
@@ -289,6 +242,7 @@ function Register() {
 											id="pincodes"
 											name="pincodes"
 											placeholder="Comma separated values"
+											validate={required}
 										/>
 										<ErrorMessage name="pincodes" component={ErrorText} />
 									</div>
@@ -297,7 +251,12 @@ function Register() {
 								{formik.values.role === ROLE.SHOPKEEPER && (
 									<div className="form-control">
 										<label htmlFor="shopName">Shop Name</label>
-										<Field type="text" id="shopName" name="shopName" />
+										<Field
+											type="text"
+											id="shopName"
+											name="shopName"
+											validate={required}
+										/>
 										<ErrorMessage name="shopName" component={ErrorText} />
 									</div>
 								)}
@@ -305,15 +264,21 @@ function Register() {
 								<button
 									type="submit"
 									disabled={
-										!formik.dirty ||
-										!formik.isValid ||
-										formik.isSubmitting ||
-										(formik.values.role === ROLE.WORKER && !profilePicture) ||
-										(formik.values.role !== ROLE.USER && !proofs.length)
+										!!(
+											!formik.dirty ||
+											!formik.isValid ||
+											formik.isSubmitting ||
+											(formik.values.role === ROLE.WORKER &&
+												(!profilePicture ||
+													!formik.values.pincodes.length)) ||
+											(formik.values.role === ROLE.SHOPKEEPER &&
+												!formik.values.shopName) ||
+											(formik.values.role !== ROLE.USER && !proofs.length)
+										)
 									}
 									className="btn btn-success mt-10"
 								>
-									Register
+									{formik.isSubmitting ? "Registering" : "Register"}
 								</button>
 							</Form>
 						);

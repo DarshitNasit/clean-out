@@ -3,7 +3,6 @@ export const buildFormData = (data) => {
 	const formData = new FormData();
 
 	keys.forEach((key) => {
-		console.log(key, data[key]);
 		if (Array.isArray(data[key])) {
 			data[key].forEach((value) => formData.append(key, value));
 		} else {
@@ -11,5 +10,6 @@ export const buildFormData = (data) => {
 		}
 	});
 
-	return formData;
+	const headers = { "Content-Type": "multipart/form-data" };
+	return { formData, headers };
 };
