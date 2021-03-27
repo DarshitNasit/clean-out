@@ -1,0 +1,35 @@
+{
+	"name": "clean-out-again",
+	"version": "1.0.0",
+	"description": "Clean Out",
+	"main": "server.js",
+	"scripts": {
+		"start": "cross-env APP_ENV=production node server.js",
+		"dev": "concurrently \"npm run client\" \"npm run server\"",
+		"server": "cross-env APP_ENV=development nodemon --ignore test.js server.js",
+		"client": "npm start --prefix client"
+	},
+	"author": "Darshit Nasit",
+	"license": "ISC",
+	"dependencies": {
+		"bcryptjs": "^2.4.3",
+		"concurrently": "^6.0.0",
+		"cors": "^2.8.5",
+		"cross-env": "^7.0.3",
+		"dotenv": "^8.2.0",
+		"express": "^4.17.1",
+		"express-session": "^1.17.1",
+		"moment": "^2.29.1",
+		"mongoose": "^5.12.2",
+		"morgan": "^1.10.0",
+		"multer": "^1.4.2",
+		"nodemailer": "^6.5.0",
+		"passport": "^0.4.1",
+		"passport-local": "^1.0.0",
+		"sharp": "^0.27.2",
+		"uuid": "^8.3.2"
+	},
+	"devDependencies": {
+		"nodemon": "^2.0.7"
+	}
+}
