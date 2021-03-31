@@ -1,6 +1,7 @@
 const router = require("express").Router();
-const { ifAuthorized } = require("../middlewares/auth");
+const { ifLogin, ifAuthorized } = require("../middlewares/auth");
 const {
+	getUserFromSession,
 	getUserById,
 	getUserByPhone,
 	registerUser,
@@ -12,6 +13,9 @@ const {
 /**
  * GET
  */
+// body -> {}
+// resp -> {success, message, user}
+router.get("/auth", ifLogin, getUserFromSession);
 // body -> {}
 // resp -> {success, message, user, address, serviceOrders, itemOrders}
 router.get("/:userId", getUserById);

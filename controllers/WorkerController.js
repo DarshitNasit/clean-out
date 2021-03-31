@@ -14,7 +14,7 @@ const { getOrders } = require("./UserController");
 
 const encrypt = require("../utilities/encrypt");
 const handleError = require("../utilities/errorHandler");
-const { stringToArray } = require("../utilities/formatter");
+const { stringToArray, arrayToString } = require("../utilities/formatter");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
 
 const getWorkerWithShopkeeperById = async (workerId) => {
@@ -36,6 +36,23 @@ const getWorkerWithShopkeeperById = async (workerId) => {
 			return { workerUser, shopkeeperUser };
 		}
 		return { workerUser };
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getOnlyWorkerById = async (req, res) => {
+	try {
+		const workerId = req.params.workerId;
+		const worker = await WorkerModel.findById(workerId);
+		if (!worker) {
+			const message = "Worker not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const pincodes = arrayToString(await LocationModel.find({ workerId }));
+		const message = "Worker found";
+		res.json(new Response(RESPONSE.SUCCESS, { message, worker: { ...worker, pincodes } }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -277,6 +294,7 @@ const removeWorker = async (req, res) => {
 };
 
 module.exports = {
+	getOnlyWorkerById,
 	getWorkerById,
 	getWorkerByPhone,
 	getWorkerWithShopkeeperById,

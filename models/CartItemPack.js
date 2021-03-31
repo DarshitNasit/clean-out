@@ -3,19 +3,9 @@ const mongoose = require("mongoose");
 const PackSchema = mongoose.Schema(
 	{
 		//cartItemPackId
-		userId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		itemId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		count: {
-			type: Number,
-			required: true,
-			default: 0,
-		},
+		userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		count: { type: Number, required: true, default: 0 },
 	},
 	{ versionKey: false }
 );

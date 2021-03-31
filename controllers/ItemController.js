@@ -9,6 +9,17 @@ const RESPONSE = require("../models/Enums/RESPONSE");
 const handleError = require("../utilities/errorHandler");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
 
+const getItemsRandom = async (req, res) => {
+	try {
+		const count = await ItemModel.countDocuments();
+		const random = Math.max(Math.min(Math.floor(Math.random() * count), count - 4), 0);
+		const items = await ItemModel.find().skip(random).limit(4);
+		res.json(new Response(RESPONSE.SUCCESS, { message: "Items found", items }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 const getItem = async (req, res) => {
 	try {
 		const itemId = req.params.itemId;
@@ -82,6 +93,7 @@ const updateItem = async (req, res) => {
 		item.itemName = req.body.itemName;
 		item.description = req.body.description;
 		item.price = req.body.price;
+		item.isAvailable = req.body.isAvailable;
 
 		if (req.files.itemImage) {
 			const itemImage = req.files.itemImage[0].filename;
@@ -142,6 +154,7 @@ const addToCart = async (req, res) => {
 };
 
 module.exports = {
+	getItemsRandom,
 	getItem,
 	getItems,
 	addItem,

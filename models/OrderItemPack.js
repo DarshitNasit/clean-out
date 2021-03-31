@@ -4,33 +4,12 @@ const STATUS = require("./Enums/STATUS");
 const PackSchema = mongoose.Schema(
 	{
 		// sub order id
-		orderId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-			index: true,
-		},
-		shopkeeperId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-			index: true,
-		},
-		itemId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		count: {
-			type: Number,
-			default: Number(1),
-		},
-		status: {
-			type: STATUS,
-			required: true,
-			default: STATUS.PENDING,
-		},
-		deliveredDate: {
-			type: String,
-			default: null,
-		},
+		orderId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+		shopkeeperId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+		itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		count: { type: Number, default: Number(1) },
+		status: { type: STATUS, required: true, default: STATUS.PENDING },
+		deliveredDate: { type: String, default: null },
 	},
 	{ versionKey: false }
 );

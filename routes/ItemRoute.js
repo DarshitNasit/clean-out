@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
+	getItemsRandom,
 	addItem,
 	getItem,
 	updateItem,
@@ -12,6 +13,9 @@ const {
 /**
  * GET
  */
+// body -> {}
+// resp -> {success, message, item, ratings}
+router.get("/random", getItemsRandom);
 // body -> {}
 // resp -> {success, message, item, ratings}
 router.get("/:itemId", getItem);

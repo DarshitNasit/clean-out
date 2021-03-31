@@ -47,9 +47,9 @@ const onSubmit = async (values, setError, history, page) => {
 };
 
 const validationSchema = Yup.object({
-	phone: Yup.string(),
-	// .matches(/^[0-9]+$/, "Must be only digits")
-	// .length(10, "Must be 10 digits")
+	phone: Yup.string()
+		.matches(/^[0-9]+$/, "Must be only digits")
+		.length(10, "Must be 10 digits"),
 	OTP: Yup.string().length(6, "Invalid OTP"),
 	password: Yup.string(),
 	confirmPassword: Yup.string().oneOf([Yup.ref("password"), null], "Passwords must match"),

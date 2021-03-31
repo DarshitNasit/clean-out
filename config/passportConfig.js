@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const LocalStrategy = require("passport-local").Strategy;
 const UserModel = require("../models/User");
 const Response = require("../models/Response");
@@ -13,7 +14,10 @@ module.exports = async (passport) => {
 
 	passport.deserializeUser(async (id, done) => {
 		try {
-			const user = await UserModel.findById(id);
+			const user = await UserModel.aggregate([
+				{ $match: { _id: mongoose.Types.ObjectId(id) } },
+				{ $project: { userName: 1, phone: 1, role: 1 } },
+			]);
 			done(null, user);
 		} catch (error) {
 			done(err, false);
@@ -32,7 +36,7 @@ const verifyFunction = async (phone, password, done) => {
 		const isMatch = await bcrypt.compare(password, user.password);
 		if (isMatch) {
 			const message = "Successfully logged in";
-			return done(null, user, new Response(RESPONSE.SUCCESS, { message }));
+			return done(null, user, new Response(RESPONSE.SUCCESS, { message, user }));
 		}
 
 		const message = "Password incorrect";

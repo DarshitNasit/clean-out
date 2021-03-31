@@ -67,15 +67,22 @@ app.use("/test", require("./routes/TestRoute"));
 app.use("/item", require("./routes/ItemRoute"));
 app.use("/worker", require("./routes/WorkerRoute"));
 app.use("/rating", require("./routes/RatingRoute"));
+app.use("/address", require("./routes/AddressRoute"));
 app.use("/service", require("./routes/ServiceRoute"));
 app.use("/shopkeeper", require("./routes/ShopkeeperRoute"));
 app.use("/serviceOrder", require("./routes/ServiceOrderRoute"));
+app.use("/serviceCategory", require("./routes/ServiceCategoryRoute"));
 
 /**
  * Verifying folders
  */
 if (!fs.existsSync(process.env.UPLOADS)) fs.mkdirSync(process.env.UPLOADS);
 if (!fs.existsSync(process.env.TEMP_UPLOADS)) fs.mkdirSync(process.env.TEMP_UPLOADS);
+
+/**
+ * Load necessary data
+ */
+// require("./database/LoadServiceCategory")();
 
 /**
  * Listen requests

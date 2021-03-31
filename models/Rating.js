@@ -3,22 +3,10 @@ const mongoose = require("mongoose");
 const RatingSchema = mongoose.Schema(
 	{
 		// rating id
-		userId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		targetId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		ratingValue: {
-			type: Number,
-			required: true,
-		},
-		description: {
-			type: String,
-			default: "",
-		},
+		userId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		targetId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		ratingValue: { type: Number, required: true },
+		description: { type: String, default: "" },
 	},
 	{ versionKey: false }
 );

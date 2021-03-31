@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 
 import Footer from "./Footer";
 import Header from "./Header";
@@ -12,7 +12,7 @@ import RESPONSE from "../enums/RESPONSE";
 import Axios from "../utilities/Axios";
 import { buildFormData } from "../utilities/FormData";
 
-const initialValues = { itemName: "", price: "", description: "" };
+const initialValues = {};
 
 const onSubmit = async (values, setError, history, user, itemImage) => {
 	setError(null);
@@ -38,22 +38,22 @@ const validationSchema = Yup.object({
 	description: Yup.string().required("Required"),
 });
 
-function AddItem() {
+function UpdateItem(props) {
 	const history = useHistory();
 	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(true);
 	useEffect(() => {
+		getUser();
+
 		async function getUser() {
 			const res = await Axios.GET("/user/auth");
-			const data = res.data;
-			if (data.user) {
-				if (data.user.role === ROLE.SHOPKEEPER) {
-					setUser(data.user);
+			if (res.data.user) {
+				if (res.data.user.role === ROLE.SHOPKEEPER) {
+					setUser(res.data.user);
 					setLoading(false);
 				} else history.push("/");
 			} else history.push("/login");
 		}
-		getUser();
 	}, [history]);
 
 	const [error, setError] = useState(null);
@@ -120,12 +120,15 @@ function AddItem() {
 									</div>
 
 									<button type="submit" className="btn btn-success mt-10">
-										Add Item
+										Update Item
 									</button>
 								</Form>
 							);
 						}}
 					</Formik>
+					<p className="big-font-size mt-10 mb-10">
+						New to Clean Out ? <Link to="/register">Register</Link>
+					</p>
 				</div>
 				<Footer></Footer>
 			</>
@@ -133,4 +136,4 @@ function AddItem() {
 	);
 }
 
-export default AddItem;
+export default UpdateItem;

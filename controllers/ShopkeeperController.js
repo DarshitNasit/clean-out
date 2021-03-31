@@ -18,6 +18,22 @@ const encrypt = require("../utilities/encrypt");
 const handleError = require("../utilities/errorHandler");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
 
+const getOnlyShopkeeperById = async (req, res) => {
+	try {
+		const shopkeeperId = req.params.shopkeeperId;
+		const shopkeeper = await ShopkeeperModel.findById(shopkeeperId);
+		if (!shopkeeper) {
+			const message = "Shopkeeper not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const message = "Shopkeeper found";
+		res.json(new Response(RESPONSE.SUCCESS, { message, shopkeeper }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 const getShopkeeperById = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
@@ -322,6 +338,7 @@ const removeShopkeeper = async (req, res) => {
 };
 
 module.exports = {
+	getOnlyShopkeeperById,
 	getShopkeeperById,
 	getShopkeeperByPhone,
 	getWorkers,

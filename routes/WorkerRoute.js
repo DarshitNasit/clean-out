@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
+	getOnlyWorkerById,
 	getWorkerById,
 	getWorkerByPhone,
 	getRequestedOrders,
@@ -13,6 +14,9 @@ const {
  * GET
  */
 // body -> {}
+// resp -> {success, message, workerUser}
+router.get("/workerOnly/:workerId", getOnlyWorkerById);
+// body -> {}
 // resp -> {success, message, workerUser, address, worker, serviceOrders, itemOrders}
 router.get("/:workerId", getWorkerById);
 // body -> {phone}
@@ -22,7 +26,7 @@ router.get("/phone", getWorkerByPhone);
 // resp -> {success, message, serviceOrders}
 router.get("/requestedOrders/:workerId", getRequestedOrders);
 
-/**
+/**w
  * POST
  */
 // body -> {userName, phone, password, role, society, area, pincode, city, state, profilePicture, proofs, pincodes}

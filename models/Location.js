@@ -2,14 +2,8 @@ const mongoose = require("mongoose");
 
 const LocationSchema = mongoose.Schema(
 	{
-		workerId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
-		pincode: {
-			type: String,
-			required: true,
-		},
+		workerId: { type: mongoose.Schema.Types.ObjectId, required: true },
+		pincode: { type: String, required: true },
 	},
 	{ versionKey: false }
 );

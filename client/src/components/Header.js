@@ -50,7 +50,7 @@ function Header() {
 						</Link>
 					</li>
 					<li>
-						<Link className="white" to="/profile">
+						<Link className="white" to="/updateProfile">
 							<AccountCircleIcon className="icon" />
 						</Link>
 					</li>

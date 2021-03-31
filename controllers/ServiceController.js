@@ -13,7 +13,6 @@ const RESPONSE = require("../models/Enums/RESPONSE");
 const NOTIFICATION = require("../models/Enums/NOTIFICATION");
 
 const handleError = require("../utilities/errorHandler");
-const { stringToArray } = require("../utilities/formatter");
 const { sendNotifications } = require("../utilities/notifications");
 
 const getService = async (req, res) => {
@@ -77,7 +76,7 @@ const addService = async (req, res) => {
 	try {
 		const serviceProviderId = req.params.serviceProviderId;
 		const serviceProviderUser = await UserModel.findById(serviceProviderId);
-		if (!serviceProviderUser || serviceProviderUser.role == ROLE.USER) {
+		if (!serviceProviderUser || serviceProviderUser.role === ROLE.USER) {
 			const message = "Service provider not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
@@ -87,13 +86,11 @@ const addService = async (req, res) => {
 		service._id = _id;
 		service.serviceProviderId = serviceProviderId;
 		service.serviceName = req.body.serviceName;
-		service.price = req.body.price;
-		service.maxSquareFeet = req.body.maxSquareFeet;
 		service.serviceCategory = req.body.serviceCategory;
-		service.subCategory = stringToArray(req.body.subCategory);
+		service.subCategory = req.body.subCategory;
 		service.description = req.body.description;
 
-		if (serviceProviderUser.role == ROLE.WORKER) {
+		if (serviceProviderUser.role === ROLE.WORKER) {
 			const workerService = new WorkerServiceModel({
 				workerId: serviceProviderId,
 				serviceId: _id,
@@ -126,10 +123,8 @@ const updateService = async (req, res) => {
 		}
 
 		service.serviceName = req.body.serviceName;
-		service.price = req.body.price;
-		service.maxSquareFeet = req.body.maxSquareFeet;
 		service.serviceCategory = req.body.serviceCategory;
-		service.subCategory = stringToArray(req.body.subCategory);
+		service.subCategory = req.body.subCategory;
 		service.description = req.body.description;
 
 		await service.save();
@@ -210,7 +205,7 @@ const bookService = async (req, res) => {
 		await Promise.all([serviceOrder.save(), workerService.save()]);
 
 		const targets = [user.phone, workerUser.phone];
-		if (worker.isDependent == "true") {
+		if (worker.isDependent === "true") {
 			const shopkeeperUser = await ShopkeeperModel.findById(worker.shopkeeperId);
 			targets.push(shopkeeperUser.phone);
 		}

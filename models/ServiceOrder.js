@@ -5,51 +5,20 @@ const STATUS = require("./Enums/STATUS");
 const OrderSchema = mongoose.Schema(
 	{
 		// order id
-		userId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-			index: true,
-		},
-		workerId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-			index: true,
-		},
-		shopkeeperId: {
-			type: mongoose.Schema.Types.ObjectId,
-			default: null,
-			index: true,
-		},
-		serviceId: {
-			type: mongoose.Schema.Types.ObjectId,
-			required: true,
-		},
+		userId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+		workerId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+		shopkeeperId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
+		serviceId: { type: mongoose.Schema.Types.ObjectId, required: true },
 		placedDate: {
 			type: String,
 			required: true,
 			default: moment().format(process.env.DATE_FORMAT),
 		},
-		deliveredDate: {
-			type: String,
-			default: null,
-		},
-		price: {
-			type: Number,
-			required: true,
-		},
-		status: {
-			type: STATUS,
-			required: true,
-			default: STATUS.PENDING,
-		},
-		metaData: {
-			type: Object,
-			default: null,
-		},
-		OTP: {
-			type: String,
-			default: null,
-		},
+		deliveredDate: { type: String, default: null },
+		price: { type: Number, required: true },
+		status: { type: STATUS, required: true, default: STATUS.PENDING },
+		metaData: { type: Object, default: null },
+		OTP: { type: String, default: null },
 	},
 	{ versionKey: false }
 );

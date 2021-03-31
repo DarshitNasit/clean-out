@@ -14,6 +14,11 @@ const bcrypt = require("bcryptjs");
 const handleError = require("../utilities/errorHandler");
 const encrypt = require("../utilities/encrypt");
 
+const getUserFromSession = async (req, res) => {
+	const user = req.user[0];
+	res.json(new Response(RESPONSE.SUCCESS, { message: "User found", user }));
+};
+
 const getRole = async (userId) => {
 	try {
 		const user = await UserModel.findById(userId);
@@ -191,6 +196,7 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
+	getUserFromSession,
 	getRole,
 	getOrders,
 	getUserById,

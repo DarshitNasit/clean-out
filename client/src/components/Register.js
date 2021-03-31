@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import * as Yup from "yup";
-import axios from "axios";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import { useHistory } from "react-router-dom";
 
@@ -34,7 +33,7 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 		values.role === ROLE.USER ? "user" : values.role === ROLE.WORKER ? "worker" : "shopkeeper";
 
 	let res, data;
-	if (values.role === ROLE.USER) res = await (await axios.post(`/${resource}`, values)).data;
+	if (values.role === ROLE.USER) res = await Axios.POST(`/${resource}`, values);
 	else {
 		data = { ...values, profilePicture, proofs };
 		const { formData, headers } = buildFormData(data);
@@ -51,9 +50,10 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 
 const validationSchema = Yup.object({
 	userName: Yup.string().required("Required"),
-	phone: Yup.string().required("Required"),
-	// .matches(/^[0-9]+$/, "Must be only digits")
-	// .length(10, "Must be 10 digits"),
+	phone: Yup.string()
+		.required("Required")
+		.matches(/^[0-9]+$/, "Must be only digits")
+		.length(10, "Must be 10 digits"),
 	password: Yup.string().required("Required"),
 	confirmPassword: Yup.string()
 		.required("Required")
@@ -109,7 +109,7 @@ function Register() {
 		<>
 			<Header></Header>
 			<div className="card_container">
-				<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
+				<h2 className="mt-20 mb-10">Register in to Clean Out</h2>
 				{error ? <ErrorText>{error}</ErrorText> : null}
 				<Formik
 					initialValues={initialValues}

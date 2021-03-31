@@ -5,6 +5,7 @@
 	--light_gray: #ededed;
 	--success: #28921f;
 	--danger: #f32013;
+	--violet: #710158;
 	--canvas_width: 500px;
 	--canvas_height: 400px;
 }
@@ -36,6 +37,12 @@
 }
 .btn-black {
 	background-color: var(--black);
+}
+.btn-main {
+	background-color: var(--main_theme);
+}
+.btn-violet {
+	background-color: var(--violet);
 }
 
 .normal-font-size {
