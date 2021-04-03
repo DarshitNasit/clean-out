@@ -1,16 +1,12 @@
 import React, { useState, useCallback, useEffect } from "react";
-import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { useHistory } from "react-router-dom";
+import { connect } from "react-redux";
+import * as Yup from "yup";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
-import ROLE from "../enums/ROLE";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
-import { buildFormData } from "../utilities/FormData";
+import { ROLE, RESPONSE } from "../enums";
+import { Axios, buildFormData } from "../utilities";
 
 const initialValues = { itemName: "", price: "", description: "" };
 
@@ -20,7 +16,6 @@ const onSubmit = async (values, setError, history, user, itemImage) => {
 		return itemImage.setItemImageError("Required");
 	}
 
-	console.log(user);
 	const { formData, headers } = buildFormData({ ...values, itemImage: itemImage.itemImage });
 	const res = await Axios.POST(`/item/${user._id}`, formData, headers);
 	const data = res.data;
@@ -38,23 +33,11 @@ const validationSchema = Yup.object({
 	description: Yup.string().required("Required"),
 });
 
-function AddItem() {
-	const history = useHistory();
-	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true);
+function AddItem(props) {
+	const { history, auth } = props;
 	useEffect(() => {
-		async function getUser() {
-			const res = await Axios.GET("/user/auth");
-			const data = res.data;
-			if (data.user) {
-				if (data.user.role === ROLE.SHOPKEEPER) {
-					setUser(data.user);
-					setLoading(false);
-				} else history.push("/");
-			} else history.push("/login");
-		}
-		getUser();
-	}, [history]);
+		if (auth.user.role !== ROLE.SHOPKEEPER) history.goBack();
+	}, []);
 
 	const [error, setError] = useState(null);
 	const [itemImage, setItemImage] = useState("");
@@ -71,9 +54,8 @@ function AddItem() {
 	}, []);
 
 	return (
-		!loading && (
+		!auth.loading && (
 			<>
-				<Header></Header>
 				<div className="card_container">
 					<h2 className="mb-10">Add Cleaning Product</h2>
 					{error ? <ErrorText>{error}</ErrorText> : null}
@@ -81,7 +63,7 @@ function AddItem() {
 						initialValues={initialValues}
 						validationSchema={validationSchema}
 						onSubmit={(values) =>
-							onSubmit(values, setError, history, user, {
+							onSubmit(values, setError, history, auth.user, {
 								itemImage,
 								setItemImageError,
 							})
@@ -127,10 +109,15 @@ function AddItem() {
 						}}
 					</Formik>
 				</div>
-				<Footer></Footer>
 			</>
 		)
 	);
 }
 
-export default AddItem;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+	};
+}
+
+export default connect(mapStateToProps)(AddItem);

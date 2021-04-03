@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { useHistory } from "react-router-dom";
+import { connect } from "react-redux";
+import * as Yup from "yup";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
-import ROLE from "../enums/ROLE";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
-import { buildFormData } from "../utilities/FormData";
+import { ROLE, RESPONSE } from "../enums";
+import { Axios, buildFormData } from "../utilities";
+import { setError } from "../redux/actions";
 
 const initialValues = {
 	userName: "",
@@ -28,7 +25,7 @@ const initialValues = {
 };
 
 const onSubmit = async (values, setError, history, profilePicture, proofs) => {
-	setError(null);
+	setError("");
 	const resource =
 		values.role === ROLE.USER ? "user" : values.role === ROLE.WORKER ? "worker" : "shopkeeper";
 
@@ -41,11 +38,8 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 	}
 
 	data = res.data;
-	if (res.success === RESPONSE.SUCCESS) {
-		history.push("/login");
-	} else {
-		setError(data.message);
-	}
+	if (res.success === RESPONSE.SUCCESS) history.push("/login", { prevPath: "/" });
+	else setError(data.message);
 };
 
 const validationSchema = Yup.object({
@@ -72,15 +66,19 @@ const required = (value) => {
 	return value === "" ? "Required" : null;
 };
 
-function Register() {
-	const [error, setError] = useState(null);
-	const history = useHistory();
+function Register(props) {
+	const { history, auth, error } = props;
+	const { setError } = props;
 
 	const [profilePicture, setProfilePicture] = useState("");
 	const [profilePictureError, setProfilePictureError] = useState(null);
 
 	const [proofs, setProofs] = useState(null);
 	const [proofsError, setProofsError] = useState(null);
+
+	useEffect(() => {
+		if (auth.isAuthenticated) history.goBack();
+	}, []);
 
 	useEffect(() => {
 		if (profilePicture != null) setProfilePictureError(null);
@@ -93,6 +91,7 @@ function Register() {
 	}, [proofs]);
 
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		if (name === "profilePicture") {
 			setProfilePictureError(null);
 			setProfilePicture(files.length ? files[0] : null);
@@ -107,10 +106,9 @@ function Register() {
 
 	return (
 		<>
-			<Header></Header>
 			<div className="card_container">
 				<h2 className="mt-20 mb-10">Register in to Clean Out</h2>
-				{error ? <ErrorText>{error}</ErrorText> : null}
+				{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 				<Formik
 					initialValues={initialValues}
 					validationSchema={validationSchema}
@@ -285,9 +283,21 @@ function Register() {
 					}}
 				</Formik>
 			</div>
-			<Footer></Footer>
 		</>
 	);
 }
 
-export default Register;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		error: state.error,
+	};
+}
+
+function mapDispatchToProps(dispatch) {
+	return {
+		setError: (error) => dispatch(setError(error)),
+	};
+}
+
+export default connect(mapStateToProps)(Register);

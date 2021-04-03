@@ -25,6 +25,9 @@
 .danger {
 	color: var(--danger);
 }
+.violet {
+	color: var(--violet);
+}
 
 .btn-success {
 	background-color: var(--success);
@@ -45,14 +48,29 @@
 	background-color: var(--violet);
 }
 
+.tiny-font-size {
+	font-size: 0.5rem;
+}
+.small-font-size {
+	font-size: 0.8rem;
+}
 .normal-font-size {
 	font-size: 1rem;
 }
 .big-font-size {
 	font-size: 1.1rem;
 }
-.hugh-font-size {
+.large-font-size {
 	font-size: 1.5rem;
+}
+.hugh-font-size {
+	font-size: 2rem;
+}
+.light {
+	font-weight: lighter;
+}
+.bold {
+	font-weight: bold;
 }
 
 .flex {
@@ -62,7 +80,13 @@
 	flex-direction: row;
 }
 .flex-col {
-	flex-direction: col;
+	flex-direction: column;
+}
+.align-center {
+	align-items: center;
+}
+.justify-center {
+	justify-content: center;
 }
 
 .li-mr-20 > li {
@@ -80,6 +104,23 @@ a:hover {
 
 select {
 	cursor: pointer;
+}
+
+.top {
+	top: 0;
+}
+.bottom {
+	bottom: 0;
+}
+.left {
+	left: 0;
+}
+.right {
+	right: 0;
+}
+
+.width100 {
+	width: 100%;
 }
 
 .mt-10 {
@@ -127,6 +168,21 @@ select {
 .m-50 {
 	margin: 50px;
 }
+.mt-auto {
+	margin-top: auto;
+}
+.mb-auto {
+	margin-bottom: auto;
+}
+.ml-auto {
+	margin-left: auto;
+}
+.mr-auto {
+	margin-right: auto;
+}
+.m-auto {
+	margin: auto;
+}
 .pt-10 {
 	padding-top: 10px;
 }
@@ -171,4 +227,19 @@ select {
 }
 .p-50 {
 	padding: 50px;
+}
+.pt-auto {
+	padding-top: auto;
+}
+.pb-auto {
+	padding-bottom: auto;
+}
+.pl-auto {
+	padding-left: auto;
+}
+.pr-auto {
+	padding-right: auto;
+}
+.p-auto {
+	padding: auto;
 }

@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const UserModel = require("../models/User");
 const ItemModel = require("../models/Item");
 const ShopkeeperModel = require("../models/Shopkeeper");
@@ -23,17 +24,52 @@ const getItemsRandom = async (req, res) => {
 const getItem = async (req, res) => {
 	try {
 		const itemId = req.params.itemId;
-		console.log(`item id = ${itemId}`);
+		const item = await ItemModel.findById(itemId);
+		if (!item) {
+			const message = "Item not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
 
+		const message = "Found item";
+		res.json(new Response(RESPONSE.SUCCESS, { message, item }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getItemWithRatings = async (req, res) => {
+	try {
+		const itemId = req.params.itemId;
 		const item = await ItemModel.findById(itemId);
 		if (!item) {
 			const message = "Item not found";
 			res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const ratings = await RatingModel.find({ targetId: itemId }).limit(
-			process.env.LIMIT_RATING
-		);
+		const query = { targetId: mongoose.Types.ObjectId(itemId) };
+		const ratings = await RatingModel.aggregate([
+			{ $match: query },
+			{ $limit: Number(process.env.LIMIT_RATING) },
+			{
+				$lookup: {
+					from: "User",
+					localField: "userId",
+					foreignField: "_id",
+					as: "user",
+				},
+			},
+			{ $unwind: "$user" },
+			{
+				$project: {
+					userId: 1,
+					targetId: 1,
+					ratingValue: 1,
+					description: 1,
+					userName: "$user.userName",
+				},
+			},
+		]);
+
 		const message = "Item found";
 		res.json(new Response(RESPONSE.SUCCESS, { message, item, ratings }));
 	} catch (error) {
@@ -139,12 +175,17 @@ const addToCart = async (req, res) => {
 		let message = null;
 		if (!item) message = "Item not found";
 		else if (!user) message = "User not found";
-
 		if (message) return res.json(new Response(RESPONSE.FAILURE, { message }));
 
 		const count = req.body.count;
-		const cartItemPack = new CartItemPack({ userId, itemId, count });
-		await cartItemPack.save();
+		let cartItemPack = await CartItemPack.findOne({ userId, itemId });
+		if (cartItemPack) {
+			cartItemPack.count = Number(cartItemPack.count) + Number(count);
+			await cartItemPack.save();
+		} else {
+			cartItemPack = new CartItemPack({ userId, itemId, count });
+			await cartItemPack.save();
+		}
 
 		message = "Added item to cart";
 		res.json(new Response(RESPONSE.SUCCESS, { message, id: cartItemPack._id }));
@@ -156,6 +197,7 @@ const addToCart = async (req, res) => {
 module.exports = {
 	getItemsRandom,
 	getItem,
+	getItemWithRatings,
 	getItems,
 	addItem,
 	updateItem,

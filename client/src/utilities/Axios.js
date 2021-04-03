@@ -1,7 +1,9 @@
 import axios from "axios";
 
-const GET = async (URL, data, headers = null) => {
-	const response = await (headers ? axios.get(URL, data, { headers }) : axios.get(URL, data));
+const GET = async (URL, params, headers = null) => {
+	const response = await (headers
+		? axios.get(URL, { params, headers })
+		: axios.get(URL, { params }));
 	return await response.data;
 };
 

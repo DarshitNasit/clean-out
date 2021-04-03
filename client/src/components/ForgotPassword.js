@@ -1,13 +1,11 @@
 import React, { useState } from "react";
 import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
 
-import Header from "./Header";
-import Footer from "./Footer";
 import ErrorText from "./ErrorText";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
+import { RESPONSE } from "../enums";
+import { Axios } from "../utilities";
 
 const initialValues = { phone: "", OTP: "", password: "", confirmPassword: "" };
 
@@ -59,14 +57,13 @@ const required = (value) => {
 	return value === "" ? "Required" : null;
 };
 
-function ForgotPassword() {
+function ForgotPassword(props) {
+	const { history } = props;
 	const [error, setError] = useState(null);
 	const [page, setPage] = useState(1);
-	const history = useHistory();
 
 	return (
 		<>
-			<Header></Header>
 			<div className="card_container">
 				<h2 className="mb-10">Forgot Password</h2>
 				{error ? <ErrorText>{error}</ErrorText> : null}
@@ -156,7 +153,6 @@ function ForgotPassword() {
 					New to Clean Out ? <Link to="/register">Register</Link>
 				</p>
 			</div>
-			<Footer></Footer>
 		</>
 	);
 }

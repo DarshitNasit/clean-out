@@ -1,57 +1,49 @@
-import React, { useState, useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import React, { useEffect } from "react";
+import { connect } from "react-redux";
 
-import Footer from "./Footer";
-import Header from "./Header";
-import Axios from "../utilities/Axios";
+import ErrorText from "./ErrorText";
+import { getDataForHome } from "../redux/actions";
 
 const cleaningCategory = (history, category, categories) => {
 	console.log("inside");
 	history.push("/cleaningCategory", { category, categories });
 };
 
-function Home() {
-	const history = useHistory();
-	const [items, setItems] = useState(null);
-	const [categories, setCategories] = useState(null);
-	useEffect(() => {
-		getCategories();
-		getItems();
+const items = (history) => {
+	console.log("inside");
+};
 
-		async function getCategories() {
-			const res = await Axios.GET("/serviceCategory");
-			setCategories(res.data.categories);
-		}
-		async function getItems() {
-			const res = await Axios.GET("/item/random");
-			setItems(res.data.items);
-		}
-	}, []);
+function Home(props) {
+	const { history, auth, home, error } = props;
+	const { getDataForHome } = props;
+
+	useEffect(() => {
+		if (!home.isLoaded) getDataForHome(history);
+	}, [history]);
 
 	return (
-		<>
-			<Header></Header>
-			<div className="App">
-				<div className="home_container">
-					<img className="home_image" src={"/images/Home.jpg"} alt="Home" />
-					<div>
-						<span className="first_row">Clean Out</span>
-						<span className="sec_row">
-							You know what would make house cleaning more fun? A servent
-						</span>
+		!auth.loading &&
+		!home.loading && (
+			<>
+				<div className="App">
+					{error.error && <ErrorText>{error.error}</ErrorText>}
+					<div className="home_container">
+						<img className="home_image" src={"/images/Home.jpg"} alt="Home" />
+						<div>
+							<span className="first_row">Clean Out</span>
+							<span className="sec_row">
+								You know what would make house cleaning more fun? A servant
+							</span>
+						</div>
 					</div>
-				</div>
-				<div className="btn-main">
-					<p className="hugh-font-size mt-20 ml-50">Cleaning Categories</p>
-					<div className="cleaning_card_container">
-						{categories &&
-							categories.map((category) => (
+					<div className="btn-main">
+						<p className="hugh-font-size mt-20 ml-50">Cleaning Categories</p>
+						<div className="cleaning_card_container">
+							{home.serviceCategories.map((category) => (
 								<div
 									key={category._id}
 									className="category_card"
-									onClick={() =>
-										cleaningCategory(history, category.category, categories)
-									}
+									onClick={() => cleaningCategory(history)}
 								>
 									<img
 										src={`/images/${category.image}`}
@@ -62,33 +54,41 @@ function Home() {
 									<span>{category.category}</span>
 								</div>
 							))}
+						</div>
 					</div>
-				</div>
 
-				<div className="white btn-violet">
-					<p className="hugh-font-size mt-20 ml-50">Cleaning Products</p>
-					<div className="cleaning_card_container">
-						{items?.map((item) => (
-							<div
-								key={item._id}
-								className="category_card"
-								onClick={() => items(history)}
-							>
-								<img
-									src={`/images/${item.itemImage}`}
-									width="300"
-									height="250"
-									alt={item.itemImage}
-								></img>
-								<span>{item.itemName}</span>
-							</div>
-						))}
+					<div className="white btn-violet">
+						<p className="hugh-font-size mt-20 ml-50">Cleaning Products</p>
+						<div className="cleaning_card_container">
+							{home.items.map((item) => (
+								<div
+									key={item._id}
+									className="category_card"
+									onClick={() => items(history)}
+								>
+									<img
+										src={`/images/${item.itemImage}`}
+										width="300"
+										height="250"
+										alt={item.itemImage}
+									></img>
+									<span>{item.itemName}</span>
+								</div>
+							))}
+						</div>
 					</div>
 				</div>
-			</div>
-			<Footer></Footer>
-		</>
+			</>
+		)
 	);
 }
 
-export default Home;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		home: state.home,
+		error: state.error,
+	};
+}
+
+export default connect(mapStateToProps, { getDataForHome })(Home);

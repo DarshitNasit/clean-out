@@ -1,6 +1,8 @@
 const router = require("express").Router();
 const {
 	getRatingById,
+	getRatingByTargetAndUser,
+	getRatings,
 	addRating,
 	updateRating,
 	deleteRating,
@@ -8,10 +10,16 @@ const {
 
 /**
  * GET
- * */
+ */
 // body -> {}
 // resp -> {success, message, rating}
 router.get("/:ratingId", getRatingById);
+// body -> {?targetId}
+// resp -> {success, message, rating}
+router.get("/targetAndUser/:userId", getRatingByTargetAndUser);
+// body -> {?lastKey}
+// resp -> {success, message, ratings}
+router.get("/ratings/:targetId", getRatings);
 
 /**
  * POST

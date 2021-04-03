@@ -1,16 +1,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { useHistory } from "react-router-dom";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
-import ROLE from "../enums/ROLE";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
-import { buildFormData } from "../utilities/FormData";
+import { ROLE, RESPONSE } from "../enums";
+import { Axios, buildFormData } from "../utilities";
 
 let initialValues = {};
 
@@ -57,8 +52,8 @@ const required = (value) => {
 	return value === "" ? "Required" : null;
 };
 
-function UpdateProfile() {
-	const history = useHistory();
+function UpdateProfile(props) {
+	const { history } = props;
 	const [user, setUser] = useState(null);
 	const [address, setAddress] = useState(null);
 	const [worker, setWorker] = useState(null);
@@ -148,7 +143,6 @@ function UpdateProfile() {
 	return (
 		!loading && (
 			<>
-				<Header></Header>
 				<div className="card_container">
 					<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
 					{error ? <ErrorText>{error}</ErrorText> : null}
@@ -336,7 +330,6 @@ function UpdateProfile() {
 						}}
 					</Formik>
 				</div>
-				<Footer></Footer>
 			</>
 		)
 	);

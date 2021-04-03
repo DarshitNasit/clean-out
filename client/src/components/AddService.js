@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
-import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
-import { useHistory } from "react-router-dom";
+import { connect } from "react-redux";
+import * as Yup from "yup";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
-import ROLE from "../enums/ROLE";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
+import { ROLE, RESPONSE } from "../enums";
+import { Axios } from "../utilities";
 
 const initialValues = {
 	serviceName: "",
@@ -52,8 +49,8 @@ const validationSchema = Yup.object({
 	description: Yup.string().required("Required"),
 });
 
-function AddService() {
-	const history = useHistory();
+function AddService(props) {
+	const { history, auth } = props;
 	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(false);
 	const [categories, setCategories] = useState([]);
@@ -88,7 +85,6 @@ function AddService() {
 	return (
 		!loading && (
 			<>
-				<Header></Header>
 				<div className="card_container">
 					<h2 className="mt-20 mb-10">Add Service</h2>
 					{error ? <ErrorText>{error}</ErrorText> : null}
@@ -136,17 +132,8 @@ function AddService() {
 										</Field>
 									</div>
 
-									{/* <SubCategoryInput
-										category={categories.find(
-											(category) =>
-												category.category === formik.values.serviceCategory
-										)}
-										subCategory={formik.values.subCategory}
-									></SubCategoryInput> */}
-
 									<FieldArray name="subCategory">
 										{(fieldArrayProps) => {
-											const { remove, push } = fieldArrayProps;
 											const { serviceCategory } = fieldArrayProps.form.values;
 											const categoriesOne = categories.find(
 												(category) => category.category === serviceCategory
@@ -214,10 +201,17 @@ function AddService() {
 						}}
 					</Formik>
 				</div>
-				<Footer></Footer>
 			</>
 		)
 	);
 }
 
-export default AddService;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		home: state.home,
+		error: state.error,
+	};
+}
+
+export default connect(mapStateToProps)(AddService);

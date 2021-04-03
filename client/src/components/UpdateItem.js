@@ -1,35 +1,25 @@
 import React, { useState, useEffect, useCallback } from "react";
-import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Link, useHistory } from "react-router-dom";
+import { connect } from "react-redux";
+import * as Yup from "yup";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
-import ROLE from "../enums/ROLE";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
-import { buildFormData } from "../utilities/FormData";
+import { RESPONSE } from "../enums";
+import { Axios, buildFormData } from "../utilities";
+import { setError } from "../redux/actions";
 
 const initialValues = {};
 
-const onSubmit = async (values, setError, history, user, itemImage) => {
-	setError(null);
-	if (itemImage.itemImage === null || itemImage.itemImage === "") {
-		return itemImage.setItemImageError("Required");
-	}
+const onSubmit = async (values, setError, history, itemId, itemImage) => {
+	setError("");
 
-	console.log(user);
 	const { formData, headers } = buildFormData({ ...values, itemImage: itemImage.itemImage });
-	const res = await Axios.POST(`/item/${user._id}`, formData, headers);
+	const res = await Axios.PUT(`/item/${itemId}`, formData, headers);
 	const data = res.data;
 
-	if (res.success === RESPONSE.FAILURE) {
-		setError(data.message);
-	} else {
-		history.push("/");
-	}
+	if (res.success === RESPONSE.FAILURE) setError(data.message);
+	else history.push(`/viewItem/${itemId}`);
 };
 
 const validationSchema = Yup.object({
@@ -39,49 +29,56 @@ const validationSchema = Yup.object({
 });
 
 function UpdateItem(props) {
-	const history = useHistory();
-	const [user, setUser] = useState(null);
-	const [loading, setLoading] = useState(true);
-	useEffect(() => {
-		getUser();
+	const { history, match, auth, error } = props;
+	const { setError } = props;
 
-		async function getUser() {
-			const res = await Axios.GET("/user/auth");
-			if (res.data.user) {
-				if (res.data.user.role === ROLE.SHOPKEEPER) {
-					setUser(res.data.user);
-					setLoading(false);
-				} else history.push("/");
-			} else history.push("/login");
-		}
-	}, [history]);
-
-	const [error, setError] = useState(null);
-	const [itemImage, setItemImage] = useState("");
+	const [loading, setLoading] = useState(false);
+	const [itemId, setItemId] = useState(null);
+	const [isAvailable, setIsAvailable] = useState(false);
+	const [itemImage, setItemImage] = useState(null);
 	const [itemImageError, setItemImageError] = useState(null);
 
 	useEffect(() => {
-		if (itemImage != null) setItemImageError(null);
-		else setItemImageError("Required");
-	}, [itemImage]);
+		getItem();
+		async function getItem() {
+			setLoading(true);
+			const itemId = match.params?.itemId;
+			if (!itemId) history.goBack();
+			else {
+				const res = await Axios.GET(`/item/${itemId}`);
+				if (res.success === RESPONSE.FAILURE) {
+					setError(res.data.message);
+					history.goBack();
+				} else {
+					initialValues.itemName = res.data.item.itemName;
+					initialValues.price = res.data.item.price;
+					initialValues.description = res.data.item.description;
+					setIsAvailable(res.data.item.isAvailable);
+					setItemId(res.data.item._id);
+					setLoading(false);
+				}
+			}
+		}
+	}, []);
 
 	const onFileUpload = useCallback((name, files) => {
 		setItemImageError(null);
 		setItemImage(files.length ? files[0] : null);
 	}, []);
 
+	function changeAvailable() {}
+
 	return (
 		!loading && (
 			<>
-				<Header></Header>
 				<div className="card_container">
 					<h2 className="mb-10">Add Cleaning Product</h2>
-					{error ? <ErrorText>{error}</ErrorText> : null}
+					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
 						initialValues={initialValues}
 						validationSchema={validationSchema}
 						onSubmit={(values) =>
-							onSubmit(values, setError, history, user, {
+							onSubmit({ ...values, isAvailable }, setError, history, itemId, {
 								itemImage,
 								setItemImageError,
 							})
@@ -113,10 +110,29 @@ function UpdateItem(props) {
 										<ErrorMessage name="description" component={ErrorText} />
 									</div>
 
-									<div className="form-control">
-										<label htmlFor="itemImage">Item Image</label>
-										<ImageInput name="itemImage" onFileUpload={onFileUpload} />
-										{itemImageError && <ErrorText>{itemImageError}</ErrorText>}
+									<div className="form-control-2">
+										<div className="form-control">
+											<label htmlFor="itemImage">Item Image</label>
+											<ImageInput
+												name="itemImage"
+												onFileUpload={onFileUpload}
+											/>
+											{itemImageError && (
+												<ErrorText>{itemImageError}</ErrorText>
+											)}
+										</div>
+										<div className="flex flex-col justify-center align-center">
+											<p>Is available ?</p>
+											<button
+												type="button"
+												className={`btn ${
+													isAvailable ? "btn-success" : "btn-danger"
+												}`}
+												onClick={() => setIsAvailable((prev) => !prev)}
+											>
+												{isAvailable ? "Available" : "Not available"}
+											</button>
+										</div>
 									</div>
 
 									<button type="submit" className="btn btn-success mt-10">
@@ -126,14 +142,23 @@ function UpdateItem(props) {
 							);
 						}}
 					</Formik>
-					<p className="big-font-size mt-10 mb-10">
-						New to Clean Out ? <Link to="/register">Register</Link>
-					</p>
 				</div>
-				<Footer></Footer>
 			</>
 		)
 	);
 }
 
-export default UpdateItem;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		error: state.error,
+	};
+}
+
+function mapDispatchToProps(dispatch) {
+	return {
+		setError: (error) => dispatch(setError(error)),
+	};
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(UpdateItem);

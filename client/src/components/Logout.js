@@ -1,27 +1,22 @@
 import { useEffect } from "react";
-import { useHistory } from "react-router-dom";
+import { connect } from "react-redux";
+import { logoutUser } from "../redux/actions";
 
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
-
-function Logout() {
-	const history = useHistory();
+function Logout(props) {
+	const { history, isAuthenticated } = props;
+	const { logoutUser } = props;
 	useEffect(() => {
-		async function getUser() {
-			const res = await Axios.GET("/user/auth");
-			const data = res.data;
-			if (!data.user) history.push("/login");
-			else logout();
-		}
-		async function logout() {
-			const res = await Axios.POST("/auth/logout");
-			if (res.success === RESPONSE.FAILURE) history.push("/login");
-			else history.push("/");
-		}
-		getUser();
-	}, [history]);
+		if (isAuthenticated) logoutUser(history);
+		else history.goBack();
+	}, []);
 
 	return null;
 }
 
-export default Logout;
+function mapStateToProps(state) {
+	return {
+		isAuthenticated: state.auth.isAuthenticated,
+	};
+}
+
+export default connect(mapStateToProps, { logoutUser })(Logout);

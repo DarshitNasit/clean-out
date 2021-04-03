@@ -1,11 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { dataURLtoFile } from "../utilities/Image";
-
-const timeout = async (sec) => {
-	await new Promise((resolve) => {
-		setTimeout(resolve, sec * 1000);
-	});
-};
+import { dataURLtoFile, timeout } from "../utilities";
 
 function Canvas({ captureImage, toggleCamera }) {
 	const videoPlayerRef = useRef(null);

@@ -1,33 +1,49 @@
 const passport = require("passport");
+const bcrypt = require("bcryptjs");
 
+const UserModel = require("../models/User");
 const Response = require("../models/Response");
 const RESPONSE = require("../models/Enums/RESPONSE");
 
+const { getJwt } = require("../utilities/jwt");
 const handleError = require("../utilities/errorHandler");
 
-const loginUser = (req, res, next) => {
-	const { phone, password } = req.body;
-
-	if (!phone || !password) {
-		const message = "Missing credentials";
-		return res.json(new Response(RESPONSE.FAILURE, { message }));
-	}
-
-	passport.authenticate("local", (err, user, info) => {
-		try {
-			if (err) throw err;
-			if (info.success === RESPONSE.FAILURE) return res.json(info);
-			req.login(user, (err) => {
-				if (err) throw err;
-				res.json(info);
-			});
-		} catch (error) {
-			handleError(err);
+const loginUser = async (req, res) => {
+	try {
+		const { phone, password } = req.body;
+		if (!phone || !password) {
+			const message = "Missing credentials";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
-	})(req, res, next);
+
+		const user = await UserModel.findOne({ phone });
+		if (!user) {
+			const message = "Invalid contact number";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const isMatch = await bcrypt.compare(password, user.password);
+		if (isMatch) {
+			const payload = {
+				_id: user._id,
+				userName: user.userName,
+				phone: user.phone,
+				role: user.role,
+			};
+
+			const token = await getJwt(payload);
+			const message = "Logged In";
+			res.json(new Response(RESPONSE.SUCCESS, { message, user: payload, token }));
+		} else {
+			const message = "Invalid password";
+			res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+	} catch (error) {
+		handleError(error);
+	}
 };
 
-const logoutUser = (req, res, next) => {
+const logoutUser = (req, res) => {
 	req.logout();
 
 	const message = "Logged out";

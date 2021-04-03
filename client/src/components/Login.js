@@ -1,30 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
-import { Link, useHistory } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { connect } from "react-redux";
 
-import Footer from "./Footer";
-import Header from "./Header";
 import ErrorText from "./ErrorText";
-import RESPONSE from "../enums/RESPONSE";
-import Axios from "../utilities/Axios";
+import { loginUser } from "../redux/actions";
 
 const initialValues = {
 	phone: "",
 	password: "",
-};
-
-const onSubmit = async (data, setError, history) => {
-	setError(null);
-
-	const res = await Axios.POST("/auth/login", data);
-	data = res.data;
-
-	if (res.success === RESPONSE.FAILURE) {
-		setError(data.message);
-	} else {
-		history.push("/");
-	}
 };
 
 const validationSchema = Yup.object({
@@ -35,73 +20,67 @@ const validationSchema = Yup.object({
 	password: Yup.string().required("Required"),
 });
 
-function Login() {
-	const history = useHistory();
-	const [loading, setLoading] = useState(true);
+function Login(props) {
+	const { history, location, auth, error } = props;
+	const { loginUser } = props;
 	useEffect(() => {
-		async function getUser() {
-			const res = await Axios.GET("/user/auth");
-			const data = res.data;
-			if (data.user) history.push("/");
-			else setLoading(false);
-		}
-		getUser();
-	}, [history]);
+		if (auth.isAuthenticated) history.goBack();
+	}, []);
 
-	const [error, setError] = useState(null);
 	return (
-		!loading && (
-			<>
-				<Header></Header>
-				<div className="card_container">
-					<h2 className="mb-10">Sign in to Clean Out</h2>
-					{error ? <ErrorText>{error}</ErrorText> : null}
-					<Formik
-						initialValues={initialValues}
-						validationSchema={validationSchema}
-						onSubmit={(values) => onSubmit(values, setError, history)}
-					>
-						{(formik) => {
-							return (
-								<Form className="card">
-									<div className="form-control">
-										<label htmlFor="phone">Contact Number</label>
-										<Field type="text" id="phone" name="phone" />
-										<ErrorMessage name="phone" component={ErrorText} />
-									</div>
+		<>
+			<div className="card_container">
+				<h2 className="mb-10">Sign in to Clean Out</h2>
+				{error.error ? <ErrorText>{error.error}</ErrorText> : null}
+				<Formik
+					initialValues={initialValues}
+					validationSchema={validationSchema}
+					onSubmit={(values) => loginUser(values, history, location)}
+				>
+					{(formik) => {
+						return (
+							<Form className="card">
+								<div className="form-control">
+									<label htmlFor="phone">Contact Number</label>
+									<Field type="text" id="phone" name="phone" />
+									<ErrorMessage name="phone" component={ErrorText} />
+								</div>
 
-									<div className="form-control">
-										<label htmlFor="password">Password</label>
-										<Field type="password" id="password" name="password" />
-										<ErrorMessage name="password" component={ErrorText} />
-									</div>
-									<br />
-									<div className="buttons">
-										<button
-											type="submit"
-											disabled={
-												!formik.dirty ||
-												!formik.isValid ||
-												formik.isSubmitting
-											}
-											className="btn btn-success mr-10"
-										>
-											{formik.isSubmitting ? "Singing In" : "Sign In"}
-										</button>
-										<button className="btn btn-danger">Forgot Password</button>
-									</div>
-								</Form>
-							);
-						}}
-					</Formik>
-					<p className="big-font-size mt-10 mb-10">
-						New to Clean Out ? <Link to="/register">Register</Link>
-					</p>
-				</div>
-				<Footer></Footer>
-			</>
-		)
+								<div className="form-control">
+									<label htmlFor="password">Password</label>
+									<Field type="password" id="password" name="password" />
+									<ErrorMessage name="password" component={ErrorText} />
+								</div>
+								<br />
+								<div className="buttons">
+									<button
+										type="submit"
+										disabled={
+											!formik.dirty || !formik.isValid || formik.isSubmitting
+										}
+										className="btn btn-success mr-10"
+									>
+										{formik.isSubmitting ? "Singing In" : "Sign In"}
+									</button>
+									<button className="btn btn-danger">Forgot Password</button>
+								</div>
+							</Form>
+						);
+					}}
+				</Formik>
+				<p className="big-font-size mt-10 mb-10">
+					New to Clean Out ? <Link to="/register">Register</Link>
+				</p>
+			</div>
+		</>
 	);
 }
 
-export default Login;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		error: state.error,
+	};
+}
+
+export default connect(mapStateToProps, { loginUser })(Login);
