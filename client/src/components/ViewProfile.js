@@ -1,6 +1,6 @@
 import React from "react";
 
-function Profile() {
+function ViewProfile() {
 	return (
 		<div>
 			<img src="/images/2510f3aa-1980-4cdd-addb-752b1e2140ee.jpg" alt="img"></img>
@@ -8,4 +8,4 @@ function Profile() {
 	);
 }
 
-export default Profile;
+export default ViewProfile;

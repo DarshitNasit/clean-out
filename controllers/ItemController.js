@@ -6,6 +6,7 @@ const RatingModel = require("../models/Rating");
 const CartItemPack = require("../models/CartItemPack");
 const Response = require("../models/Response");
 const RESPONSE = require("../models/Enums/RESPONSE");
+const { getRatingsWithUserName } = require("../controllers/RatingController");
 
 const handleError = require("../utilities/errorHandler");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
@@ -46,30 +47,7 @@ const getItemWithRatings = async (req, res) => {
 			res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const query = { targetId: mongoose.Types.ObjectId(itemId) };
-		const ratings = await RatingModel.aggregate([
-			{ $match: query },
-			{ $limit: Number(process.env.LIMIT_RATING) },
-			{
-				$lookup: {
-					from: "User",
-					localField: "userId",
-					foreignField: "_id",
-					as: "user",
-				},
-			},
-			{ $unwind: "$user" },
-			{
-				$project: {
-					userId: 1,
-					targetId: 1,
-					ratingValue: 1,
-					description: 1,
-					userName: "$user.userName",
-				},
-			},
-		]);
-
+		const ratings = await getRatingsWithUserName(itemId);
 		const message = "Item found";
 		res.json(new Response(RESPONSE.SUCCESS, { message, item, ratings }));
 	} catch (error) {

@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const {
 	getService,
+	getWorkerServiceWithRatings,
 	getServices,
 	addService,
 	updateService,
@@ -12,8 +13,11 @@ const {
  * GET
  */
 // body -> {workerId}
-// resp -> {success, message, service, workerUser, worker, workerService, ratings}
+// resp -> {success, message, service}
 router.get("/:serviceId", getService);
+// body -> {}
+// resp -> {success, message, service, workerUser, worker, workerService, ratings}
+router.get("/workerService/:workerServiceId", getWorkerServiceWithRatings);
 // body -> {lastKey}
 // resp -> {success, message, services}
 router.get("/services/:serviceProviderId", getServices);

@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Redirect, withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 
 import ShoppingCartIcon from "@material-ui/icons/ShoppingCart";
@@ -11,60 +11,73 @@ const scrollToBottom = () =>
 	window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
 
 function Header(props) {
-	const { auth } = props;
+	const { history, auth } = props;
+
+	function handleClick(event) {
+		history.push(`/${event.target.name}`);
+	}
+
 	return (
 		<div className="header_container">
-			<div className="header_left">
+			<div className="flex flex-row">
 				<span className="logo">Clean Out</span>
-				<ul className="flex flex-row li-mr-20">
+				<ul className="flex flex-row li-mr-20 align-center">
 					<li>
-						<Link className="white" to="/">
+						<button name="" className="white btn-black" onClick={handleClick}>
 							HOME
-						</Link>
+						</button>
 					</li>
 					<li>
-						<button type="button" className="white btn-black" onClick={scrollToBottom}>
+						<button className="white btn-black" onClick={scrollToBottom}>
 							CONTACT
 						</button>
 					</li>
 					{auth.isAuthenticated &&
 						[ROLE.SHOPKEEPER, ROLE.WORKER].includes(auth.user.role) && (
 							<li>
-								<Link className="white" to="/">
+								<button name="" className="white btn-black" onClick={handleClick}>
 									REQUESTED ORDERS
-								</Link>
+								</button>
 							</li>
 						)}
 				</ul>
 			</div>
 
-			<div className="header_right">
-				<ul className="flex flex-row li-mr-20">
+			<div className="flex flex-row">
+				<ul className="flex flex-row li-mr-20 align-center">
 					{!auth.isAuthenticated && (
 						<li>
-							<Link className="white" to="/login">
+							<button name="login" className="white btn-black" onClick={handleClick}>
 								LOGIN
-							</Link>
+							</button>
 						</li>
 					)}
 					{auth.isAuthenticated && (
 						<li>
-							<Link className="white" to="/logout">
+							<button name="logout" className="white btn-black" onClick={handleClick}>
 								LOGOUT
-							</Link>
+							</button>
 						</li>
 					)}
 					{auth.isAuthenticated && (
 						<>
 							<li>
-								<Link className="white" to="/cart">
+								<button
+									name="cart"
+									className="white btn-black"
+									onClick={handleClick}
+								>
 									<ShoppingCartIcon className="icon" />
-								</Link>
+								</button>
 							</li>
 							<li>
-								<Link className="white" to="/updateProfile">
+								<button
+									name="viewProfile"
+									className="white btn-black"
+									onClick={handleClick}
+								>
 									<AccountCircleIcon className="icon" />
-								</Link>
+								</button>
 							</li>
 						</>
 					)}
@@ -85,4 +98,4 @@ function mapStateToProps(state) {
 	};
 }
 
-export default connect(mapStateToProps)(Header);
+export default connect(mapStateToProps)(withRouter(Header));

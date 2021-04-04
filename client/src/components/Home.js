@@ -47,7 +47,7 @@ function Home(props) {
 								>
 									<img
 										src={`/images/${category.image}`}
-										width="300"
+										width="90%"
 										height="250"
 										alt={category.image}
 									></img>
@@ -68,7 +68,7 @@ function Home(props) {
 								>
 									<img
 										src={`/images/${item.itemImage}`}
-										width="300"
+										width="90%"
 										height="250"
 										alt={item.itemImage}
 									></img>

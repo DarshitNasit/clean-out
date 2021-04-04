@@ -32,8 +32,8 @@ function UpdateItem(props) {
 	const { history, match, auth, error } = props;
 	const { setError } = props;
 
-	const [loading, setLoading] = useState(false);
-	const [itemId, setItemId] = useState(null);
+	const itemId = match.params?.itemId;
+	const [loading, setLoading] = useState(true);
 	const [isAvailable, setIsAvailable] = useState(false);
 	const [itemImage, setItemImage] = useState(null);
 	const [itemImageError, setItemImageError] = useState(null);
@@ -41,8 +41,6 @@ function UpdateItem(props) {
 	useEffect(() => {
 		getItem();
 		async function getItem() {
-			setLoading(true);
-			const itemId = match.params?.itemId;
 			if (!itemId) history.goBack();
 			else {
 				const res = await Axios.GET(`/item/${itemId}`);
@@ -50,12 +48,14 @@ function UpdateItem(props) {
 					setError(res.data.message);
 					history.goBack();
 				} else {
-					initialValues.itemName = res.data.item.itemName;
-					initialValues.price = res.data.item.price;
-					initialValues.description = res.data.item.description;
-					setIsAvailable(res.data.item.isAvailable);
-					setItemId(res.data.item._id);
-					setLoading(false);
+					if (res.data.item.shopkeeperId !== auth.user._id) history.goBack();
+					else {
+						initialValues.itemName = res.data.item.itemName;
+						initialValues.price = res.data.item.price;
+						initialValues.description = res.data.item.description;
+						setIsAvailable(res.data.item.isAvailable);
+						setLoading(false);
+					}
 				}
 			}
 		}
@@ -65,8 +65,6 @@ function UpdateItem(props) {
 		setItemImageError(null);
 		setItemImage(files.length ? files[0] : null);
 	}, []);
-
-	function changeAvailable() {}
 
 	return (
 		!loading && (

@@ -59,14 +59,6 @@ if (!fs.existsSync(process.env.TEMP_UPLOADS)) fs.mkdirSync(process.env.TEMP_UPLO
  */
 // require("./database/LoadServiceCategory")();
 
-// async function fun() {
-// 	const item = await ItemModel.findById("6061da2747704906283c3de1");
-// 	item.ratingCount = 0;
-// 	item.ratingValue = 2.5;
-// 	await item.save();
-// }
-// fun();
-
 /**
  * Listen requests
  */

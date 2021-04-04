@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 import * as Yup from "yup";
 
 import ErrorText from "./ErrorText";
-import { ROLE, RESPONSE } from "../enums";
+import { RESPONSE } from "../enums";
 import { Axios, isEmptyObject } from "../utilities";
 import { setError, getDataForHome } from "../redux/actions";
 
@@ -15,8 +15,9 @@ const initialValues = {
 	description: "",
 };
 
-const onSubmit = async (values, setError, history, user, home) => {
+const onSubmit = async (values, setError, history, serviceId, home) => {
 	setError("");
+	console.log(values);
 	values = {
 		...values,
 		subCategory: values.subCategory
@@ -26,6 +27,7 @@ const onSubmit = async (values, setError, history, user, home) => {
 			})
 			.map((value) => ({ ...value, name: value.name[0] })),
 	};
+
 	if (!values.subCategory || !values.subCategory.length)
 		return setError("Choose at least one sub category");
 
@@ -47,9 +49,9 @@ const onSubmit = async (values, setError, history, user, home) => {
 		}
 	}
 
-	const res = await Axios.POST(`/service/${user._id}`, values);
+	const res = await Axios.PUT(`/service/${serviceId}`, values);
 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	else history.push(`/viewService/${res.data.id}`);
+	else history.push(`/viewService/${serviceId}`);
 };
 
 const validationSchema = Yup.object({
@@ -58,32 +60,61 @@ const validationSchema = Yup.object({
 	description: Yup.string().required("Required"),
 });
 
-function AddService(props) {
-	const { history, auth, error, home } = props;
+function UpdateService(props) {
+	const { history, match, auth, error, home } = props;
 	const { setError, getDataForHome } = props;
+
+	const serviceId = match.params?.serviceId;
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		getUser();
 		async function getUser() {
-			if (!auth.isAuthenticated) history.push("/login");
-			else if (auth.user.role === ROLE.USER) history.goBack();
-			else if (auth.user.role === ROLE.WORKER) {
-				const res = await Axios.GET(`/worker/workerOnly/${auth.user._id}`);
-				if (res.data.worker.isDependent === "true") history.goBack();
-				else if (!home.isLoaded) getDataForHome(history);
-				else setLoading(false);
-			} else if (!home.isLoaded) getDataForHome(history);
-			else setLoading(false);
+			if (!serviceId) history.goBack();
+			else if (!auth.isAuthenticated) history.push("/login");
+			else {
+				const res = await Axios.GET(`/service/${serviceId}`);
+				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+				else {
+					const service = res.data.service;
+					if (service.serviceProviderId !== auth.user._id) history.goBack();
+					else {
+						initialValues.serviceName = service.serviceName;
+						initialValues.serviceCategory = service.serviceCategory;
+						initialValues.subCategory = service.subCategory;
+						initialValues.description = service.description;
+						if (!home.isLoaded) getDataForHome(history);
+						else {
+							console.log("main");
+							formatSubCategory();
+						}
+					}
+				}
+			}
 		}
 	}, []);
 
 	useEffect(() => {
 		if (home.isLoaded) {
-			initialValues.serviceCategory = home.serviceCategories[0]?.category;
-			setLoading(false);
+			console.log("second");
+			formatSubCategory();
 		}
 	}, [home]);
+
+	function formatSubCategory() {
+		const values = initialValues.subCategory;
+		const subCategory = home.serviceCategories.filter(
+			(value) => value.category === initialValues.serviceCategory
+		)[0].subCategory;
+
+		initialValues.subCategory = subCategory.map((category) => {
+			for (let i = 0; i < values.length; i++)
+				if (values[i].name === category.name)
+					return { ...values[i], name: [values[i].name] };
+			return {};
+		});
+		setLoading(false);
+	}
 
 	return (
 		!loading && (
@@ -94,7 +125,7 @@ function AddService(props) {
 					<Formik
 						initialValues={initialValues}
 						validationSchema={validationSchema}
-						onSubmit={(values) => onSubmit(values, setError, history, auth.user, home)}
+						onSubmit={(values) => onSubmit(values, setError, history, serviceId, home)}
 					>
 						{(formik) => {
 							return (
@@ -152,6 +183,10 @@ function AddService(props) {
 												<div className="sub_category_input">
 													{categoriesOne?.subCategory.map(
 														(subCategory, index) => {
+															const isChecked = formik.values
+																.subCategory[index]?.name?.length
+																? true
+																: false;
 															return (
 																<div
 																	key={index}
@@ -162,6 +197,7 @@ function AddService(props) {
 																		name={`subCategory[${index}].name`}
 																		value={subCategory.name}
 																		id={`subCategory[${index}].name`}
+																		checked={isChecked}
 																	></Field>
 																	<label
 																		className="hover-pointer"
@@ -182,7 +218,6 @@ function AddService(props) {
 																				<>
 																					<Field
 																						type="number"
-																						className="btn-main"
 																						name={`subCategory[${index}].mxSqFt`}
 																					></Field>
 																					<label>
@@ -208,7 +243,9 @@ function AddService(props) {
 											!formik.dirty || !formik.isValid || formik.isSubmitting
 										}
 									>
-										{formik.isSubmitting ? "Adding Service" : "Add Service"}
+										{formik.isSubmitting
+											? "Updating Service"
+											: "Update Service"}
 									</button>
 								</Form>
 							);
@@ -235,4 +272,4 @@ function mapDispatchToProps(dispatch) {
 	};
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(AddService);
+export default connect(mapStateToProps, mapDispatchToProps)(UpdateService);

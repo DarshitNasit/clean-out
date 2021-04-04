@@ -11,6 +11,7 @@ const Response = require("../models/Response");
 const ROLE = require("../models/Enums/ROLE");
 const RESPONSE = require("../models/Enums/RESPONSE");
 const NOTIFICATION = require("../models/Enums/NOTIFICATION");
+const { getRatingsWithUserName } = require("./RatingController");
 
 const handleError = require("../utilities/errorHandler");
 const { sendNotifications } = require("../utilities/notifications");
@@ -24,16 +25,30 @@ const getService = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const workerId = req.body.workerId;
-		const [workerUser, worker, workerService] = await Promise.all([
+		const message = "Found service";
+		res.json(new Response(RESPONSE.SUCCESS, { message, service }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getWorkerServiceWithRatings = async (req, res) => {
+	try {
+		const workerServiceId = req.params.workerServiceId;
+		const workerService = await WorkerServiceModel.findById(workerServiceId);
+		if (!workerService) {
+			const message = "Worker service not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const workerId = workerService.workerId;
+		const serviceId = workerService.serviceId;
+		const [workerUser, worker, service, ratings] = await Promise.all([
 			UserModel.findById(workerId),
 			WorkerModel.findById(workerId),
-			WorkerServiceModel.find({ workerId, serviceId }),
+			ServiceModel.findById(serviceId),
+			getRatingsWithUserName(serviceId),
 		]);
-
-		const ratings = await RatingModel.find({ targetId: workerService._id }).limit(
-			process.env.LIMIT_RATING
-		);
 
 		const message = "Found service";
 		res.json(
@@ -222,6 +237,7 @@ const bookService = async (req, res) => {
 
 module.exports = {
 	getService,
+	getWorkerServiceWithRatings,
 	getServices,
 	addService,
 	updateService,

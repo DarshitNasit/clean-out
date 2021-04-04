@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const UserModel = require("../models/User");
 const RatingModel = require("../models/Rating");
 const ItemModel = require("../models/Item");
-const WorkerServiceModel = require("../models/WorkerService");
 const Response = require("../models/Response");
 const RESPONSE = require("../models/Enums/RESPONSE");
 
@@ -46,14 +45,11 @@ const getRatingByTargetAndUser = async (req, res) => {
 	}
 };
 
-const getRatings = async (req, res) => {
+const getRatingsWithUserName = async (targetId, lastKey = null) => {
 	try {
-		const targetId = req.params.targetId;
-		const lastKey = req.query.lastKey || null;
-
 		const query = {
 			targetId: mongoose.Types.ObjectId(targetId),
-			description: { $not: { $size: 0 } },
+			$expr: { $gt: [{ $strLenCP: "$description" }, 0] },
 		};
 		if (lastKey) query.userId = { $gt: mongoose.Types.ObjectId(lastKey) };
 
@@ -79,7 +75,17 @@ const getRatings = async (req, res) => {
 				},
 			},
 		]);
+		return ratings;
+	} catch (error) {
+		handleError(error);
+	}
+};
 
+const getRatings = async (req, res) => {
+	try {
+		const targetId = req.params.targetId;
+		const lastKey = req.query.lastKey || null;
+		const ratings = await getRatingsWithUserName(targetId, lastKey);
 		const message = "Found ratings";
 		res.json(new Response(RESPONSE.SUCCESS, { message, ratings }));
 	} catch (error) {
@@ -171,6 +177,7 @@ const deleteRating = async (req, res) => {
 module.exports = {
 	getRatingById,
 	getRatingByTargetAndUser,
+	getRatingsWithUserName,
 	getRatings,
 	addRating,
 	updateRating,

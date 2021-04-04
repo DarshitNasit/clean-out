@@ -19,7 +19,6 @@ const ServiceCategories = [
 	{
 		category: "Kitchen Cleaning",
 		subCategory: [
-			{ name: "Floor Cleaning", area: true, qty: false },
 			{ name: "Trolley Cleaning", area: false, qty: true },
 			{ name: "Ceiling Fan Cleaning", area: false, qty: true },
 			{ name: "Exhaust Fan Cleaning", area: false, qty: true },

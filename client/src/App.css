@@ -21,18 +21,6 @@
 	margin-left: 30px;
 }
 
-.header_left {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-}
-
-.header_right {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-}
-
 .footer_container {
 	display: flex;
 	align-items: center;
@@ -48,10 +36,6 @@
 	display: flex;
 	justify-content: space-around;
 	padding: 0 20px 0 20px;
-}
-
-.icon {
-	color: var(--white);
 }
 
 .buttons {
@@ -223,7 +207,7 @@ textarea {
 .cleaning_card_container {
 	display: grid;
 	grid-template-columns: auto auto auto auto;
-	justify-content: space-evenly;
+	justify-content: space-around;
 	align-items: center;
 }
 
@@ -231,8 +215,9 @@ textarea {
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	margin-top: 20px;
-	margin-bottom: 30px;
+	align-items: center;
+	margin-top: 10px;
+	margin-bottom: 20px;
 }
 
 .sub_category_input {
@@ -256,10 +241,12 @@ textarea {
 	font-weight: normal;
 }
 
-.sub_category_input_field > input[type="text"] {
+.sub_category_input_field > input[type="number"] {
 	width: 100%;
 	font-size: 0.8rem;
 	font-weight: normal;
+	padding: 2px;
+	background-color: var(--main_theme);
 }
 
 .view_item_container {

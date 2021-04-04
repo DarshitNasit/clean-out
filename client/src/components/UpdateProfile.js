@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import * as Yup from "yup";
 import { Formik, Form, Field, ErrorMessage } from "formik";
+import { connect } from "react-redux";
+import * as Yup from "yup";
 
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
 import { ROLE, RESPONSE } from "../enums";
 import { Axios, buildFormData } from "../utilities";
+import { setError } from "../redux/actions";
 
 let initialValues = {};
 
@@ -53,77 +55,41 @@ const required = (value) => {
 };
 
 function UpdateProfile(props) {
-	const { history } = props;
-	const [user, setUser] = useState(null);
-	const [address, setAddress] = useState(null);
-	const [worker, setWorker] = useState(null);
-	const [shopkeeper, setShopkeeper] = useState(null);
-	const [loading, setLoading] = useState(true);
+	const { history, auth, error } = props;
+	const { setError } = props;
 
+	const [loading, setLoading] = useState(true);
 	const [profilePicture, setProfilePicture] = useState(null);
 	const [proofs, setProofs] = useState(null);
-	const [error, setError] = useState(null);
 
 	useEffect(() => {
 		getUser();
-
 		async function getUser() {
-			const res = await Axios.GET("/user/auth");
-			const data = res.data;
-			if (!data.user) history.push("/login");
+			if (!auth.isAuthenticated) history.push("/login");
 			else {
-				setUser(data.user);
-				if (data.user.role === ROLE.WORKER) {
-					const [resA, resW] = await Promise.all([
-						Axios.GET(`/address/${data.user._id}`),
-						Axios.GET(`/worker/workerOnly/${data.user._id}`),
-					]);
-					setAddress(resA.data.address);
-					setWorker(resW.data.worker);
-				} else if (data.user.role === ROLE.SHOPKEEPER) {
-					const [resA, resS] = await Promise.all([
-						Axios.GET(`/address/${data.user._id}`),
-						Axios.GET(`/shopkeeper/shopkeeperOnly/${data.user._id}`),
-					]);
-					setAddress(resA.data.address);
-					setShopkeeper(resS.data.shopkeeper);
-				} else {
-					const resA = await Axios.GET(`/address/${data.user._id}`);
-					setAddress(resA.data.address);
-				}
+				const res = await Axios.GET(`/address/${auth.user._id}`);
+				initialValues.userName = auth.user.userName;
+				initialValues.phone = auth.user.phone;
+				initialValues.password = "";
+				initialValues.newPassword = "";
+				initialValues.confirmPassword = "";
+				initialValues.society = res.data.address.society;
+				initialValues.area = res.data.address.area;
+				initialValues.pincode = res.data.address.pincode;
+				initialValues.city = res.data.address.city;
+				initialValues.state = res.data.address.state;
 
+				if (auth.user.role === ROLE.WORKER) {
+					const resW = await Axios.GET(`/worker/workerOnly/${auth.user._id}`);
+					initialValues.pincodes = resW.data.worker.pincodes;
+				} else if (auth.user.role === ROLE.SHOPKEEPER) {
+					const resS = await Axios.GET(`/shopkeeper/shopkeeperOnly/${auth.user._id}`);
+					initialValues.shopName = resS.data.shopkeeper.shopName;
+				}
 				setLoading(false);
 			}
 		}
-	}, [history]);
-
-	useEffect(() => {
-		if (user) {
-			initialValues.userName = user.userName;
-			initialValues.phone = user.phone;
-			initialValues.password = "";
-			initialValues.newPassword = "";
-			initialValues.confirmPassword = "";
-		}
-	}, [user]);
-
-	useEffect(() => {
-		if (address) {
-			initialValues.society = address.society;
-			initialValues.area = address.area;
-			initialValues.pincode = address.pincode;
-			initialValues.city = address.city;
-			initialValues.state = address.state;
-		}
-	}, [address]);
-
-	useEffect(() => {
-		if (worker) initialValues.pincodes = worker.pincodes;
-	}, [worker]);
-
-	useEffect(() => {
-		if (shopkeeper) initialValues.shopName = shopkeeper.shopName;
-	}, [shopkeeper]);
+	}, []);
 
 	const onFileUpload = useCallback((name, files) => {
 		if (name === "profilePicture") {
@@ -145,12 +111,12 @@ function UpdateProfile(props) {
 			<>
 				<div className="card_container">
 					<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
-					{error ? <ErrorText>{error}</ErrorText> : null}
+					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
 						initialValues={initialValues}
 						validationSchema={validationSchema}
 						onSubmit={(values) =>
-							onSubmit(values, setError, history, user, profilePicture, proofs)
+							onSubmit(values, setError, history, auth.user, profilePicture, proofs)
 						}
 					>
 						{(formik) => {
@@ -235,7 +201,7 @@ function UpdateProfile(props) {
 										</div>
 									</div>
 
-									{worker && (
+									{auth.user.role === ROLE.WORKER && (
 										<>
 											<div className="form-control-2">
 												<div className="form-control">
@@ -277,7 +243,7 @@ function UpdateProfile(props) {
 										</>
 									)}
 
-									{shopkeeper && (
+									{auth.user.role === ROLE.SHOPKEEPER && (
 										<>
 											<div className="form-control">
 												<label htmlFor="proofs">ID Proofs (max 2)</label>
@@ -311,14 +277,10 @@ function UpdateProfile(props) {
 												!formik.dirty ||
 												!formik.isValid ||
 												formik.isSubmitting ||
-												(user.role === ROLE.WORKER &&
-													(!profilePicture ||
-														!formik.values.pincodes.length)) ||
-												(user.role === ROLE.SHOPKEEPER &&
-													!formik.values.shopName) ||
-												(user.role !== ROLE.USER &&
-													proofs &&
-													!proofs.length)
+												(auth.user.role === ROLE.WORKER &&
+													!formik.values.pincodes.length) ||
+												(auth.user.role === ROLE.SHOPKEEPER &&
+													!formik.values.shopName)
 											)
 										}
 										className="btn btn-success mt-10"
@@ -335,4 +297,17 @@ function UpdateProfile(props) {
 	);
 }
 
-export default UpdateProfile;
+function mapStateToProps(state) {
+	return {
+		auth: state.auth,
+		error: state.error,
+	};
+}
+
+function mapDispatchToProps(dispatch) {
+	return {
+		setError: (error) => dispatch(setError(error)),
+	};
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(UpdateProfile);
