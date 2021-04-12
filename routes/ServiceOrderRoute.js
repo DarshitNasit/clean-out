@@ -10,7 +10,7 @@ const {
  * GET
  */
 // body -> {}
-// resp -> {success, message, serviceOrder, user, workerUser, worker, service, workerService}
+// resp -> {success, message, serviceOrder, user, address, workerUser, worker, service, workerService}
 router.get("/:serviceOrderId", getServiceOrder);
 
 /**
@@ -25,7 +25,7 @@ router.post("/:serviceOrderId", replaceOrder);
  */
 // body -> {}
 // resp -> {success, message}
-router.put("/doneOrder/:serviceOrderId", doneOrder);
+router.put("/:serviceOrderId", doneOrder);
 
 /**
  * DELETE

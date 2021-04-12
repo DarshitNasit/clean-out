@@ -1,16 +1,16 @@
 const router = require("express").Router();
 const {
 	getItemOrder,
-	cancelItemOrder,
 	replaceItemOrder,
 	changeItemOrderStatus,
+	cancelItemOrderPack,
 } = require("../controllers/ItemOrderController");
 
 /**
  * GET
  */
-// body -> {userId}
-// resp -> {success, message, user?, address?, orderItemPacks}
+// body -> {q:userId}
+// resp -> {success, message, user?, address?, itemOrder?, orderItemPacks}
 router.get("/:orderId", getItemOrder);
 
 /**
@@ -25,13 +25,13 @@ router.post("/:orderId", replaceItemOrder);
  */
 // body -> {userId}
 // resp -> {success, message}
-router.put("/changeStatus/:subOrderId", changeItemOrderStatus);
+router.put("/:orderItemPackId", changeItemOrderStatus);
 
 /**
  * DELETE
  */
 // body -> {userId}
 // resp -> {success, message}
-router.delete("/:subOrderId", cancelItemOrder);
+router.delete("/:orderItemPackId", cancelItemOrderPack);
 
 module.exports = router;

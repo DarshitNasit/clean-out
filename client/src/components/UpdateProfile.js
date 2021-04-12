@@ -14,7 +14,7 @@ let initialValues = {};
 const onSubmit = async (values, setError, history, user, profilePicture, proofs) => {
 	setError(null);
 	const resource =
-		user.role === ROLE.USER ? "user" : values.role === ROLE.WORKER ? "worker" : "shopkeeper";
+		user.role === ROLE.USER ? "user" : user.role === ROLE.WORKER ? "worker" : "shopkeeper";
 
 	let res, data;
 	if (user.role === ROLE.USER) res = await Axios.PUT(`/${resource}/${user._id}`, values);
@@ -25,11 +25,8 @@ const onSubmit = async (values, setError, history, user, profilePicture, proofs)
 	}
 
 	data = res.data;
-	if (res.success === RESPONSE.SUCCESS) {
-		history.push("/");
-	} else {
-		setError(data.message);
-	}
+	if (res.success === RESPONSE.SUCCESS) history.goBack();
+	else setError(data.message);
 };
 
 const validationSchema = Yup.object({
@@ -55,7 +52,7 @@ const required = (value) => {
 };
 
 function UpdateProfile(props) {
-	const { history, auth, error } = props;
+	const { history, location, auth, error } = props;
 	const { setError } = props;
 
 	const [loading, setLoading] = useState(true);
@@ -67,9 +64,9 @@ function UpdateProfile(props) {
 		async function getUser() {
 			if (!auth.isAuthenticated) history.push("/login");
 			else {
-				const res = await Axios.GET(`/address/${auth.user._id}`);
-				initialValues.userName = auth.user.userName;
-				initialValues.phone = auth.user.phone;
+				const res = await Axios.GET(`/user/${auth.user._id}`);
+				initialValues.userName = res.data.user.userName;
+				initialValues.phone = res.data.user.phone;
 				initialValues.password = "";
 				initialValues.newPassword = "";
 				initialValues.confirmPassword = "";
@@ -80,16 +77,21 @@ function UpdateProfile(props) {
 				initialValues.state = res.data.address.state;
 
 				if (auth.user.role === ROLE.WORKER) {
-					const resW = await Axios.GET(`/worker/workerOnly/${auth.user._id}`);
+					const resW = await Axios.GET(`/worker/${auth.user._id}`);
 					initialValues.pincodes = resW.data.worker.pincodes;
+					console.log(initialValues.pincodes);
 				} else if (auth.user.role === ROLE.SHOPKEEPER) {
-					const resS = await Axios.GET(`/shopkeeper/shopkeeperOnly/${auth.user._id}`);
+					const resS = await Axios.GET(`/shopkeeper/${auth.user._id}`);
 					initialValues.shopName = resS.data.shopkeeper.shopName;
 				}
 				setLoading(false);
 			}
 		}
-	}, []);
+
+		return () => {
+			setLoading(true);
+		};
+	}, [location.pathname]);
 
 	const onFileUpload = useCallback((name, files) => {
 		if (name === "profilePicture") {
@@ -107,9 +109,9 @@ function UpdateProfile(props) {
 	};
 
 	return (
-		!loading && (
-			<>
-				<div className="card_container">
+		<div className="card_container">
+			{!loading && (
+				<>
 					<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
 					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
@@ -291,9 +293,9 @@ function UpdateProfile(props) {
 							);
 						}}
 					</Formik>
-				</div>
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

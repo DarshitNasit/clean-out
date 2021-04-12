@@ -27,7 +27,7 @@ const getCartItems = async (req, res) => {
 			cartItemPacks.map(async (cartItemPack) => {
 				const itemId = cartItemPack.itemId;
 				const item = await ItemModel.findById(itemId);
-				if (!item || item.isAvailable == false) {
+				if (!item || !item.isAvailable) {
 					const _id = cartItemPack._id;
 					itemsToRemove.push(_id);
 					return CartItemPack.findByIdAndDelete(_id);
@@ -35,15 +35,17 @@ const getCartItems = async (req, res) => {
 			})
 		);
 
+		cartItemPacks = cartItemPacks.filter(
+			(cartItemPack) => !itemsToRemove.includes(cartItemPack._id)
+		);
 		cartItemPacks = await Promise.all(
 			cartItemPacks.map(async (cartItemPack) => {
 				const itemId = cartItemPack.itemId;
 				const item = await ItemModel.findById(itemId);
-				return { cartItemPack, item };
+				return { ...cartItemPack._doc, item };
 			})
 		);
 
-		cartItemPacks.filter((cartItemPack) => !itemsToRemove.includes(cartItemPack._id));
 		const message = "Found cart";
 		res.json(new Response(RESPONSE.SUCCESS, { message, cartItemPacks }));
 	} catch (error) {
@@ -61,7 +63,7 @@ const changeCartItemCount = async (req, res) => {
 		}
 
 		const itemId = cartItemPack.itemId;
-		let value = Number(value);
+		const value = Number(req.body.value);
 
 		const item = await ItemModel.findById(itemId);
 		if (!item) {
@@ -69,8 +71,9 @@ const changeCartItemCount = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		cartItemPack.count += value;
-		if (cartItemPack.count == 0) await cartItemPack.delete();
+		cartItemPack.count = value;
+		if (value === 0) await cartItemPack.delete();
+		else await cartItemPack.save();
 
 		const message = "Updated item count";
 		res.json(new Response(RESPONSE.SUCCESS, { message, cartItemPack }));
@@ -105,34 +108,40 @@ const placeOrder = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE), { message });
 		}
 
+		let netPrice = 0;
 		const orderId = mongoose.Types.ObjectId();
 		const cartItemPacks = await CartItemPackModel.find({ userId });
-		cartItemPacks.map(async (cartItemPack) => {
-			const itemId = cartItemPack.itemId;
-			let item = await ItemModel.findById(itemId);
-			if (!item || !item.isAvailable) return;
+		await Promise.all(
+			cartItemPacks.map(async (cartItemPack) => {
+				const itemId = cartItemPack.itemId;
+				const item = await ItemModel.findById(itemId);
+				if (!item || !item.isAvailable) return;
 
-			const shopkeeperId = item.shopkeeperId;
-			let orderItemPack = { orderId, shopkeeperId, itemId, count: cartItemPack.count };
-			orderItemPack = new OrderItemPackModel(orderItemPack);
-			item.orderedCount++;
+				const shopkeeperId = item.shopkeeperId;
+				const shopkeeperUser = await UserModel.findById(shopkeeperId);
 
-			[item, orderItemPack, shopkeeperUser] = await Promise.all([
-				item.save(),
-				orderItemPack.save(),
-				UserModel.findById(shopkeeperId),
-			]);
+				const count = cartItemPack.count;
+				const price = item.price * count;
+				netPrice += price;
+				const orderItemPack = new OrderItemPackModel({
+					orderId,
+					shopkeeperId,
+					itemId,
+					count,
+					price,
+				});
+				item.orderedCount++;
 
-			const price = item.price * cartItemPack.count;
-			const message = `Placed order of ${price}`;
-			sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.PLACED_ORDER);
-		});
+				const message = `Placed order of ${price}`;
+				sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.PLACED_ORDER);
+				return Promise.all([item.save(), orderItemPack.save()]);
+			})
+		);
 
-		const price = Number(req.body.price);
-		const itemOrder = new ItemOrderModel({ userId, price });
+		const itemOrder = new ItemOrderModel({ _id: orderId, userId, price: netPrice });
 		await Promise.all([itemOrder.save(), CartItemPackModel.deleteMany({ userId })]);
 
-		let message = `Placed order of ${price}`;
+		let message = `Placed order of ${netPrice}`;
 		sendNotifications(message, [user.phone], NOTIFICATION.PLACED_ORDER);
 
 		message = "Placed order";
@@ -142,7 +151,7 @@ const placeOrder = async (req, res) => {
 	}
 };
 
-modules.exports = {
+module.exports = {
 	getCartItems,
 	changeCartItemCount,
 	clearCart,

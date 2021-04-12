@@ -38,7 +38,7 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 	}
 
 	data = res.data;
-	if (res.success === RESPONSE.SUCCESS) history.push("/login", { prevPath: "/" });
+	if (res.success === RESPONSE.SUCCESS) history.push("/login");
 	else setError(data.message);
 };
 
@@ -105,185 +105,180 @@ function Register(props) {
 	}, []);
 
 	return (
-		<>
-			<div className="card_container">
-				<h2 className="mt-20 mb-10">Register in to Clean Out</h2>
-				{error.error ? <ErrorText>{error.error}</ErrorText> : null}
-				<Formik
-					initialValues={initialValues}
-					validationSchema={validationSchema}
-					onSubmit={(values) =>
-						onSubmit(values, setError, history, profilePicture, proofs)
-					}
-				>
-					{(formik) => {
-						return (
-							<Form className="card mb-50">
-								<div className="form-control">
-									<label htmlFor="userName">Full Name</label>
-									<Field type="text" id="userName" name="userName" />
-									<ErrorMessage name="userName" component={ErrorText} />
-								</div>
+		<div className="card_container">
+			<h2 className="mt-20 mb-10">Register in to Clean Out</h2>
+			{error.error ? <ErrorText>{error.error}</ErrorText> : null}
+			<Formik
+				initialValues={initialValues}
+				validationSchema={validationSchema}
+				onSubmit={(values) => onSubmit(values, setError, history, profilePicture, proofs)}
+			>
+				{(formik) => {
+					return (
+						<Form className="card mb-50">
+							<div className="form-control">
+								<label htmlFor="userName">Full Name</label>
+								<Field type="text" id="userName" name="userName" />
+								<ErrorMessage name="userName" component={ErrorText} />
+							</div>
 
-								<div className="form-control">
-									<label htmlFor="phone">Contact Number</label>
-									<Field type="text" id="phone" name="phone" />
-									<ErrorMessage name="phone" component={ErrorText} />
-								</div>
+							<div className="form-control">
+								<label htmlFor="phone">Contact Number</label>
+								<Field type="text" id="phone" name="phone" />
+								<ErrorMessage name="phone" component={ErrorText} />
+							</div>
 
-								<div className="form-control">
-									<label htmlFor="password">Password</label>
-									<Field type="password" id="password" name="password" />
-									<ErrorMessage name="password" component={ErrorText} />
-								</div>
+							<div className="form-control">
+								<label htmlFor="password">Password</label>
+								<Field type="password" id="password" name="password" />
+								<ErrorMessage name="password" component={ErrorText} />
+							</div>
 
+							<div className="form-control">
+								<label htmlFor="confirmPassword">Confirm Password</label>
+								<Field
+									type="password"
+									id="confirmPassword"
+									name="confirmPassword"
+								/>
+								<ErrorMessage name="confirmPassword" component={ErrorText} />
+							</div>
+
+							<div className="form-control">
+								<label htmlFor="society">Society</label>
+								<Field type="text" id="society" name="society" />
+								<ErrorMessage name="society" component={ErrorText} />
+							</div>
+
+							<div className="form-control-2">
 								<div className="form-control">
-									<label htmlFor="confirmPassword">Confirm Password</label>
+									<label htmlFor="area">Area</label>
+									<Field type="text" id="area" name="area" />
+									<ErrorMessage name="area" component={ErrorText} />
+								</div>
+								<div className="form-control">
+									<label htmlFor="pincode">Pincode</label>
+									<Field type="text" id="pincode" name="pincode" />
+									<ErrorMessage name="pincode" component={ErrorText} />
+								</div>
+							</div>
+
+							<div className="form-control-2">
+								<div className="form-control">
+									<label htmlFor="city">City</label>
+									<Field type="text" id="city" name="city" />
+									<ErrorMessage name="city" component={ErrorText} />
+								</div>
+								<div className="form-control">
+									<label htmlFor="state">State</label>
+									<Field type="text" id="state" name="state" />
+									<ErrorMessage name="state" component={ErrorText} />
+								</div>
+							</div>
+
+							<div className="form-control-2">
+								<div className="form-control">
+									<label htmlFor="role">For:</label>
 									<Field
-										type="password"
-										id="confirmPassword"
-										name="confirmPassword"
-									/>
-									<ErrorMessage name="confirmPassword" component={ErrorText} />
+										className="role_select"
+										as="select"
+										name="role"
+										id="role"
+									>
+										<option value="USER">Customer</option>
+										<option value="SHOPKEEPER">Shopkeeper</option>
+										<option value="WORKER">Worker</option>
+									</Field>
 								</div>
-
-								<div className="form-control">
-									<label htmlFor="society">Society</label>
-									<Field type="text" id="society" name="society" />
-									<ErrorMessage name="society" component={ErrorText} />
-								</div>
-
-								<div className="form-control-2">
-									<div className="form-control">
-										<label htmlFor="area">Area</label>
-										<Field type="text" id="area" name="area" />
-										<ErrorMessage name="area" component={ErrorText} />
-									</div>
-									<div className="form-control">
-										<label htmlFor="pincode">Pincode</label>
-										<Field type="text" id="pincode" name="pincode" />
-										<ErrorMessage name="pincode" component={ErrorText} />
-									</div>
-								</div>
-
-								<div className="form-control-2">
-									<div className="form-control">
-										<label htmlFor="city">City</label>
-										<Field type="text" id="city" name="city" />
-										<ErrorMessage name="city" component={ErrorText} />
-									</div>
-									<div className="form-control">
-										<label htmlFor="state">State</label>
-										<Field type="text" id="state" name="state" />
-										<ErrorMessage name="state" component={ErrorText} />
-									</div>
-								</div>
-
-								<div className="form-control-2">
-									<div className="form-control">
-										<label htmlFor="role">For:</label>
-										<Field
-											className="role_select"
-											as="select"
-											name="role"
-											id="role"
-										>
-											<option value="USER">Customer</option>
-											<option value="SHOPKEEPER">Shopkeeper</option>
-											<option value="WORKER">Worker</option>
-										</Field>
-									</div>
-									{formik.values.role === ROLE.SHOPKEEPER && (
-										<div className="form-control">
-											<label htmlFor="proofs">ID Proofs (max 2)</label>
-											<ImageInput
-												name="proofs"
-												onFileUpload={onFileUpload}
-												multiple
-											/>
-											{proofsError && <ErrorText>{proofsError}</ErrorText>}
-										</div>
-									)}
-								</div>
-
-								{formik.values.role === ROLE.WORKER && (
-									<div className="form-control-2">
-										<div className="form-control">
-											<label htmlFor="profilePicture">Profile Picture</label>
-											<ImageInput
-												name="profilePicture"
-												onFileUpload={onFileUpload}
-											/>
-											{profilePictureError && (
-												<ErrorText>{profilePictureError}</ErrorText>
-											)}
-										</div>
-										<div className="form-control">
-											<label htmlFor="proofs">ID Proofs (max 2)</label>
-											<ImageInput
-												name="proofs"
-												onFileUpload={onFileUpload}
-												multiple
-											/>
-											{proofsError && <ErrorText>{proofsError}</ErrorText>}
-										</div>
-									</div>
-								)}
-
-								{formik.values.role === ROLE.WORKER && (
-									<div className="form-control">
-										<label htmlFor="pincodes">
-											Pincodes of preferred locations
-										</label>
-										<Field
-											type="text"
-											id="pincodes"
-											name="pincodes"
-											placeholder="Comma separated values"
-											validate={required}
-										/>
-										<ErrorMessage name="pincodes" component={ErrorText} />
-									</div>
-								)}
-
 								{formik.values.role === ROLE.SHOPKEEPER && (
 									<div className="form-control">
-										<label htmlFor="shopName">Shop Name</label>
-										<Field
-											type="text"
-											id="shopName"
-											name="shopName"
-											validate={required}
+										<label htmlFor="proofs">ID Proofs (max 2)</label>
+										<ImageInput
+											name="proofs"
+											onFileUpload={onFileUpload}
+											multiple
 										/>
-										<ErrorMessage name="shopName" component={ErrorText} />
+										{proofsError && <ErrorText>{proofsError}</ErrorText>}
 									</div>
 								)}
+							</div>
 
-								<button
-									type="submit"
-									disabled={
-										!!(
-											!formik.dirty ||
-											!formik.isValid ||
-											formik.isSubmitting ||
-											(formik.values.role === ROLE.WORKER &&
-												(!profilePicture ||
-													!formik.values.pincodes.length)) ||
-											(formik.values.role === ROLE.SHOPKEEPER &&
-												!formik.values.shopName) ||
-											(formik.values.role !== ROLE.USER && !proofs.length)
-										)
-									}
-									className="btn btn-success mt-10"
-								>
-									{formik.isSubmitting ? "Registering" : "Register"}
-								</button>
-							</Form>
-						);
-					}}
-				</Formik>
-			</div>
-		</>
+							{formik.values.role === ROLE.WORKER && (
+								<div className="form-control-2">
+									<div className="form-control">
+										<label htmlFor="profilePicture">Profile Picture</label>
+										<ImageInput
+											name="profilePicture"
+											onFileUpload={onFileUpload}
+										/>
+										{profilePictureError && (
+											<ErrorText>{profilePictureError}</ErrorText>
+										)}
+									</div>
+									<div className="form-control">
+										<label htmlFor="proofs">ID Proofs (max 2)</label>
+										<ImageInput
+											name="proofs"
+											onFileUpload={onFileUpload}
+											multiple
+										/>
+										{proofsError && <ErrorText>{proofsError}</ErrorText>}
+									</div>
+								</div>
+							)}
+
+							{formik.values.role === ROLE.WORKER && (
+								<div className="form-control">
+									<label htmlFor="pincodes">
+										Pincodes of preferred locations
+									</label>
+									<Field
+										type="text"
+										id="pincodes"
+										name="pincodes"
+										placeholder="Comma separated values"
+										validate={required}
+									/>
+									<ErrorMessage name="pincodes" component={ErrorText} />
+								</div>
+							)}
+
+							{formik.values.role === ROLE.SHOPKEEPER && (
+								<div className="form-control">
+									<label htmlFor="shopName">Shop Name</label>
+									<Field
+										type="text"
+										id="shopName"
+										name="shopName"
+										validate={required}
+									/>
+									<ErrorMessage name="shopName" component={ErrorText} />
+								</div>
+							)}
+
+							<button
+								type="submit"
+								disabled={
+									!!(
+										!formik.dirty ||
+										!formik.isValid ||
+										formik.isSubmitting ||
+										(formik.values.role === ROLE.WORKER &&
+											(!profilePicture || !formik.values.pincodes.length)) ||
+										(formik.values.role === ROLE.SHOPKEEPER &&
+											!formik.values.shopName) ||
+										(formik.values.role !== ROLE.USER && !proofs.length)
+									)
+								}
+								className="btn btn-success mt-10"
+							>
+								{formik.isSubmitting ? "Registering" : "Register"}
+							</button>
+						</Form>
+					);
+				}}
+			</Formik>
+		</div>
 	);
 }
 
@@ -300,4 +295,4 @@ function mapDispatchToProps(dispatch) {
 	};
 }
 
-export default connect(mapStateToProps)(Register);
+export default connect(mapStateToProps, mapDispatchToProps)(Register);

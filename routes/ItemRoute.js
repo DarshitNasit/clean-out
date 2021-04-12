@@ -4,11 +4,12 @@ const {
 	getItemsRandom,
 	getItem,
 	getItemWithRatings,
+	getItems,
+	getItemsForStore,
 	addItem,
 	updateItem,
 	deleteItem,
 	addToCart,
-	getItems,
 } = require("../controllers/ItemController");
 
 /**
@@ -17,13 +18,16 @@ const {
 // body -> {}
 // resp -> {success, message, item, ratings}
 router.get("/random", getItemsRandom);
+// body -> {q:search q:sortBy q:lastKey}
+// resp -> {success, message, items}
+router.get("/store", getItemsForStore);
 // body -> {}
 // resp -> {success, message, item}
 router.get("/:itemId", getItem);
 // body -> {}
 // resp -> {success, message, item, ratings}
 router.get("/withRatings/:itemId", getItemWithRatings);
-// body -> {lastKey}
+// body -> {q:lastKey}
 // resp -> {success, message, items}
 router.get("/items/:shopkeeperId", getItems);
 
@@ -33,7 +37,7 @@ router.get("/items/:shopkeeperId", getItems);
 // body -> {itemName, price, description, itemImage}
 // resp -> {success, message, id:itemId}
 router.post("/:shopkeeperId", upload, addItem);
-// body -> {userId, price, count}
+// body -> {userId, count}
 // resp -> {success, message, id:itemOrderId}
 router.post("/toCart/:itemId", addToCart);
 

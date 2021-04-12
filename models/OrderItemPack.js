@@ -8,6 +8,7 @@ const PackSchema = mongoose.Schema(
 		shopkeeperId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
 		itemId: { type: mongoose.Schema.Types.ObjectId, required: true },
 		count: { type: Number, default: Number(1) },
+		price: { type: Number, required: true },
 		status: { type: STATUS, required: true, default: STATUS.PENDING },
 		deliveredDate: { type: String, default: null },
 	},

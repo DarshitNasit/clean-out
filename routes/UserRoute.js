@@ -1,8 +1,7 @@
 const router = require("express").Router();
-const { ifLogin, ifAuthorized } = require("../middlewares/auth");
 const {
-	getUserFromSession,
 	getUserById,
+	getUserWithOrders,
 	getUserByPhone,
 	registerUser,
 	updateUser,
@@ -13,15 +12,15 @@ const {
 /**
  * GET
  */
-// body -> {}
-// resp -> {success, message, user}
-router.get("/auth", ifLogin, getUserFromSession);
-// body -> {}
-// resp -> {success, message, user, address, serviceOrders, itemOrders}
-router.get("/:userId", getUserById);
-// body -> {phone}
+// body -> {q:phone}
 // resp -> {success, message, user, address}
 router.get("/phone", getUserByPhone);
+// body -> {}
+// resp -> {success, message, user, address}
+router.get("/:userId", getUserById);
+// body -> {}
+// resp -> {success, message, user, address, serviceOrders, itemOrders}
+router.get("/withOrders/:userId", getUserWithOrders);
 
 /**
  * POST
@@ -45,6 +44,6 @@ router.put("/:userId", updateUser);
  */
 // body -> {}
 // resp -> {success, message}
-router.delete("/userId", removeUser);
+router.delete("/:userId", removeUser);
 
 module.exports = router;

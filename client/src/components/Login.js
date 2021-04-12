@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { connect } from "react-redux";
 
 import ErrorText from "./ErrorText";
-import { loginUser } from "../redux/actions";
+import { loginUser, setError } from "../redux/actions";
 
 const initialValues = {
 	phone: "",
@@ -22,57 +22,59 @@ const validationSchema = Yup.object({
 
 function Login(props) {
 	const { history, location, auth, error } = props;
-	const { loginUser } = props;
+	const { loginUser, setError } = props;
+
 	useEffect(() => {
 		if (auth.isAuthenticated) history.goBack();
 	}, []);
 
 	return (
-		<>
-			<div className="card_container">
-				<h2 className="mb-10">Sign in to Clean Out</h2>
-				{error.error ? <ErrorText>{error.error}</ErrorText> : null}
-				<Formik
-					initialValues={initialValues}
-					validationSchema={validationSchema}
-					onSubmit={(values) => loginUser(values, history, location)}
-				>
-					{(formik) => {
-						return (
-							<Form className="card">
-								<div className="form-control">
-									<label htmlFor="phone">Contact Number</label>
-									<Field type="text" id="phone" name="phone" />
-									<ErrorMessage name="phone" component={ErrorText} />
-								</div>
+		<div className="card_container">
+			<h2 className="mb-10">Sign in to Clean Out</h2>
+			{error.error ? <ErrorText>{error.error}</ErrorText> : null}
+			<Formik
+				initialValues={initialValues}
+				validationSchema={validationSchema}
+				onSubmit={(values) => loginUser(values, history, location)}
+			>
+				{(formik) => {
+					return (
+						<Form className="card">
+							<div className="form-control">
+								<label htmlFor="phone">Contact Number</label>
+								<Field type="text" id="phone" name="phone" />
+								<ErrorMessage name="phone" component={ErrorText} />
+							</div>
 
-								<div className="form-control">
-									<label htmlFor="password">Password</label>
-									<Field type="password" id="password" name="password" />
-									<ErrorMessage name="password" component={ErrorText} />
-								</div>
-								<br />
-								<div className="buttons">
-									<button
-										type="submit"
-										disabled={
-											!formik.dirty || !formik.isValid || formik.isSubmitting
-										}
-										className="btn btn-success mr-10"
-									>
-										{formik.isSubmitting ? "Singing In" : "Sign In"}
-									</button>
-									<button className="btn btn-danger">Forgot Password</button>
-								</div>
-							</Form>
-						);
-					}}
-				</Formik>
-				<p className="big-font-size mt-10 mb-10">
-					New to Clean Out ? <Link to="/register">Register</Link>
-				</p>
-			</div>
-		</>
+							<div className="form-control">
+								<label htmlFor="password">Password</label>
+								<Field type="password" id="password" name="password" />
+								<ErrorMessage name="password" component={ErrorText} />
+							</div>
+							<br />
+							<div className="buttons">
+								<button
+									type="submit"
+									disabled={
+										!formik.dirty || !formik.isValid || formik.isSubmitting
+									}
+									className="btn btn-success mr-10"
+								>
+									{formik.isSubmitting ? "Singing In" : "Sign In"}
+								</button>
+								<button className="btn btn-danger">Forgot Password</button>
+							</div>
+						</Form>
+					);
+				}}
+			</Formik>
+			<p className="big-font-size mt-10 mb-10">
+				New to Clean Out ?{" "}
+				<Link to="/register" onClick={() => setError("")}>
+					Register
+				</Link>
+			</p>
+		</div>
 	);
 }
 
@@ -83,4 +85,11 @@ function mapStateToProps(state) {
 	};
 }
 
-export default connect(mapStateToProps, { loginUser })(Login);
+function mapDispatchToProps(dispatch) {
+	return {
+		setError: (error) => dispatch(setError(error)),
+		loginUser: (...rest) => loginUser(...rest)(dispatch),
+	};
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(Login);

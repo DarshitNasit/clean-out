@@ -17,6 +17,7 @@ const OrderSchema = mongoose.Schema(
 		deliveredDate: { type: String, default: null },
 		price: { type: Number, required: true },
 		status: { type: STATUS, required: true, default: STATUS.PENDING },
+		serviceCategory: { type: String, required: true },
 		metaData: { type: Object, default: null },
 		OTP: { type: String, default: null },
 	},

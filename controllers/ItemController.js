@@ -58,14 +58,14 @@ const getItemWithRatings = async (req, res) => {
 const getItems = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKey = req.body.lastKey || "";
+		const lastKey = req.query.lastKey || null;
 
-		const items =
-			lastKey == ""
-				? await ItemModel.find({ shopkeeperId }).limit(Number(process.env.LIMIT_ITEMS))
-				: await ItemModel.find({ shopkeeperId, _id: { $gt: lastKey } }).limit(
-						Number(process.env.LIMIT_ITEMS)
-				  );
+		const query = { shopkeeperId: mongoose.Types.ObjectId(shopkeeperId) };
+		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
+		const items = await ItemModel.aggregate([
+			{ $match: query },
+			{ $limit: Number(process.env.LIMIT_ITEMS) },
+		]);
 
 		const message = "Found services";
 		res.json(new Response(RESPONSE.SUCCESS, { message, items }));
@@ -73,6 +73,75 @@ const getItems = async (req, res) => {
 		handleError(error);
 	}
 };
+
+const getItemsForStore = async (req, res) => {
+	try {
+		const search = req.query.search || null;
+		const sortBy = req.query.sortBy || "price";
+		const page = req.query.page || 1;
+
+		const query = {};
+		const sort = {};
+
+		if (search) {
+			const pattern = `\w*${search}\w*`;
+			query.$or = [{ $text: { $search: search } }, { itemName: new RegExp(pattern, "i") }];
+		}
+		sort[sortBy] = sortBy === "price" ? 1 : -1;
+
+		const pipeline = [{ $match: query }, { $sort: sort }];
+		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+		pipeline.push(
+			{ $skip: Number(process.env.LIMIT_ITEMS) * (page - 1) },
+			{ $limit: Number(process.env.LIMIT_ITEMS) }
+		);
+
+		const [totalItems, items] = await Promise.all([
+			ItemModel.aggregate(pipelineCount),
+			ItemModel.aggregate(pipeline),
+		]);
+		const message = "Items found";
+		res.json(
+			new Response(RESPONSE.SUCCESS, { message, items, totalItems: totalItems[0].totalItems })
+		);
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+// const getItemsForStore = async (req, res) => {
+// 	try {
+// 		const search = req.query.search || null;
+// 		const sortBy = req.query.sortBy || null;
+// 		const lastKey = req.query.lastKey || null;
+
+// 		const query = {};
+// 		if (search) {
+// 			const pattern = `\w*${search}\w*`;
+// 			query.$or = [{ $text: { $search: search } }, { itemName: new RegExp(pattern, "i") }];
+// 		}
+
+// 		const sort = {};
+// 		sort[sortBy] = sortBy === "price" ? 1 : -1;
+// 		// if (search) sort.score = { $meta: "textScore" };
+
+// 		const pipeline = [
+// 			{ $match: query },
+// 			{ $sort: sort },
+// 			{ $limit: Number(process.env.LIMIT_ITEMS) },
+// 		];
+// 		if (lastKey)
+// 			pipeline.splice(2, 0, { $match: { _id: { $gt: mongoose.Types.ObjectId(lastKey) } } });
+
+// 		console.log(pipeline);
+// 		const items = await ItemModel.aggregate(pipeline);
+// 		console.log(items);
+// 		const message = "Items found";
+// 		res.json(new Response(RESPONSE.SUCCESS, { message, items }));
+// 	} catch (error) {
+// 		handleError(error);
+// 	}
+// };
 
 const addItem = async (req, res) => {
 	try {
@@ -177,6 +246,7 @@ module.exports = {
 	getItem,
 	getItemWithRatings,
 	getItems,
+	getItemsForStore,
 	addItem,
 	updateItem,
 	deleteItem,

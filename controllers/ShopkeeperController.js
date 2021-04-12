@@ -11,14 +11,16 @@ const WorkerServiceModel = require("../models/WorkerService");
 const OrderItemPackModel = require("../models/OrderItemPack");
 const ServiceOrderModel = require("../models/ServiceOrder");
 const RESPONSE = require("../models/Enums/RESPONSE");
+const NOTIFICATION = require("../models/Enums/NOTIFICATION");
 const { getOrders } = require("../controllers/UserController");
 
 const bcrypt = require("bcryptjs");
 const encrypt = require("../utilities/encrypt");
 const handleError = require("../utilities/errorHandler");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
+const { sendNotifications } = require("../utilities/notifications");
 
-const getOnlyShopkeeperById = async (req, res) => {
+const getShopkeeperById = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
 		const shopkeeper = await ShopkeeperModel.findById(shopkeeperId);
@@ -34,7 +36,7 @@ const getOnlyShopkeeperById = async (req, res) => {
 	}
 };
 
-const getShopkeeperById = async (req, res) => {
+const getShopkeeperWithOrders = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
 		const [shopkeeperUser, address, shopkeeper] = await Promise.all([
@@ -47,7 +49,7 @@ const getShopkeeperById = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const { serviceOrders, itemOrders } = getOrders(shopkeeperId);
+		const { serviceOrders, itemOrders } = await getOrders(shopkeeperId);
 		const message = "Found shopkeeper";
 		res.json(
 			new Response(RESPONSE.SUCCESS, {
@@ -64,34 +66,14 @@ const getShopkeeperById = async (req, res) => {
 	}
 };
 
-const getShopkeeperByPhone = async (req, res) => {
-	try {
-		const phone = req.body.phone;
-		const shopkeeperUser = await UserModel.findOne({ phone });
-		const [address, shopkeeper] = await Promise.all([
-			AddressModel.findById(shopkeeperUser._id),
-			ShopkeeperModel.findById(shopkeeperUser._id),
-		]);
-		if (!shopkeeperUser || !shopkeeper) {
-			const message = "Shopkeeper not found";
-			return res.json(new Response(RESPONSE.FAILURE, { message }));
-		}
-
-		const message = "Found shopkeeper";
-		res.json(new Response(RESPONSE.SUCCESS, { message, shopkeeperUser, address, shopkeeper }));
-	} catch (error) {
-		handleError(error);
-	}
-};
-
 const getWorkers = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKey = req.body.lastKey || "";
+		const lastKey = req.query.lastKey || null;
 		const ObjectId = mongoose.Types.ObjectId;
 
-		const query = { shopkeeperId: ObjectId(shopkeeperId) };
-		if (lastKey != "") query._id = { $gt: ObjectId(lastKey) };
+		const query = { shopkeeperId: ObjectId(shopkeeperId), isDependent: "true" };
+		if (lastKey) query._id = { $gt: ObjectId(lastKey) };
 		const workers = await WorkerModel.aggregate([
 			{ $match: query },
 			{ $limit: Number(process.env.LIMIT_WORKERS) },
@@ -130,8 +112,8 @@ const getWorkers = async (req, res) => {
 const getRequestedOrders = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKeyItemOrder = req.body.lastKeyItemOrder || "";
-		const lastKeyServiceOrder = req.body.lastKeyServiceOrder || "";
+		const lastKeyItemOrder = req.query.lastKeyItemOrder || null;
+		const lastKeyServiceOrder = req.query.lastKeyServiceOrder || null;
 		const ObjectId = mongoose.Types.ObjectId;
 
 		const shopkeeperUser = await UserModel.findById(shopkeeperId);
@@ -140,66 +122,113 @@ const getRequestedOrders = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		let query = { shopkeeperId: ObjectId(shopkeeperId) };
-		if (lastKeyItemOrder != "") query._id = { $gt: ObjectId(lastKeyItemOrder) };
-		const itemOrders = await OrderItemPackModel.aggregate([
-			{ $match: query },
-			{ $group: { _id: "$orderId", subOrders: { $push: "$$ROOT" } } },
+		const pipelineItemOrders = [
+			{ $match: { shopkeeperId: ObjectId(shopkeeperId) } },
+			{
+				$lookup: {
+					from: "Item",
+					localField: "itemId",
+					foreignField: "_id",
+					as: "item",
+				},
+			},
+			{ $unwind: "$item" },
+			{ $group: { _id: "$orderId", orderItemPacks: { $push: "$$ROOT" } } },
+			{ $sort: { _id: 1 } },
 			{
 				$lookup: {
 					from: "ItemOrder",
 					localField: "_id",
 					foreignField: "_id",
-					as: "ItemOrder",
+					as: "itemOrder",
 				},
 			},
-			{ $unwind: "$ItemOrder" },
+			{ $unwind: "$itemOrder" },
 			{ $limit: Number(process.env.LIMIT_ORDERS) },
 			{
 				$lookup: {
 					from: "User",
-					localField: "ItemOrder.userId",
+					localField: "itemOrder.userId",
 					foreignField: "_id",
-					as: "User",
+					as: "user",
 				},
 			},
-			{ $unwind: "$User" },
+			{ $unwind: "$user" },
 			{
 				$lookup: {
 					from: "Address",
-					localField: "_id",
+					localField: "itemOrder.userId",
 					foreignField: "_id",
-					as: "Address",
+					as: "address",
 				},
 			},
-			{ $unwind: "$Address" },
-			{ $sort: { "$ItemOrder.placedDate": -1 } },
-		]);
+			{ $unwind: "$address" },
+			{
+				$project: {
+					itemOrder: {
+						placedDate: 1,
+						price: 1,
+					},
+					user: {
+						_id: 1,
+						userName: 1,
+						phone: 1,
+					},
+					address: {
+						society: 1,
+						area: 1,
+						pincode: 1,
+						city: 1,
+						state: 1,
+					},
+					orderItemPacks: 1,
+				},
+			},
+		];
 
-		query = { shopkeeperId: ObjectId(shopkeeperId) };
-		if (lastKeyServiceOrder != "") query._id = { $gt: ObjectId(lastKeyServiceOrder) };
-		const serviceOrders = await ServiceOrderModel.aggregate([
+		if (lastKeyItemOrder)
+			pipelineItemOrders.splice(5, 0, {
+				$match: { _id: { $gt: ObjectId(lastKeyItemOrder) } },
+			});
+
+		const query = { shopkeeperId: ObjectId(shopkeeperId) };
+		if (lastKeyServiceOrder) query._id = { $gt: ObjectId(lastKeyServiceOrder) };
+
+		const pipelineServiceOrders = [
 			{ $match: query },
 			{ $limit: Number(process.env.LIMIT_ORDERS) },
 			{
 				$lookup: {
+					from: "Service",
+					localField: "serviceId",
+					foreignField: "_id",
+					as: "service",
+				},
+			},
+			{ $unwind: "$service" },
+			{
+				$lookup: {
 					from: "User",
 					localField: "userId",
 					foreignField: "_id",
-					as: "User",
+					as: "user",
 				},
 			},
-			{ $unwind: "$User" },
+			{ $unwind: "$user" },
 			{
 				$lookup: {
 					from: "Address",
 					localField: "userId",
 					foreignField: "_id",
-					as: "Address",
+					as: "address",
 				},
 			},
-			{ $unwind: "$Address" },
-			{ $sort: { placedDate: -1 } },
+			{ $unwind: "$address" },
+		];
+
+		const [itemOrders, serviceOrders] = await Promise.all([
+			OrderItemPackModel.aggregate(pipelineItemOrders),
+			ServiceOrderModel.aggregate(pipelineServiceOrders),
 		]);
 
 		const message = "Found orders";
@@ -239,6 +268,50 @@ const registerShopkeeper = async (req, res) => {
 
 		const message = "Registered shopkeeper";
 		res.json(new Response(RESPONSE.SUCCESS, { message, id: _id }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const addWorker = async (req, res) => {
+	try {
+		const shopkeeperId = req.params.shopkeeperId;
+		const phone = req.body.phone;
+
+		const worker = (
+			await UserModel.aggregate([
+				{ $match: { phone } },
+				{
+					$lookup: {
+						from: "Worker",
+						localField: "_id",
+						foreignField: "_id",
+						as: "Worker",
+					},
+				},
+				{ $unwind: "$Worker" },
+				{ $replaceWith: "$Worker" },
+			])
+		)[0];
+
+		console.log(worker);
+		if (worker.isDependent === "true") {
+			const message = "Worker is already under a shopkeeper";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (worker.isDependent === "requested") {
+			let message = "Worker is already requested";
+			if (worker.shopkeeperId != shopkeeperId) message += " by another shopkeeper";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		worker.shopkeeperId = shopkeeperId;
+		worker.isDependent = "requested";
+		await WorkerModel.findByIdAndUpdate(worker._id, worker);
+
+		const message = "Sent request";
+		res.json(new Response(RESPONSE.SUCCESS, { message }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -320,14 +393,16 @@ const removeShopkeeper = async (req, res) => {
 			deleteFiles(shopkeeper.proofs),
 			ItemModel.deleteMany({ shopkeeperId }),
 			ServiceModel.deleteMany({ serviceProviderId: shopkeeperId }),
-			workers.map((worker) => {
-				worker.shopkeeperId = null;
-				worker.isDependent = "false";
-				return Promise.all([
-					worker.save(),
-					WorkerServiceModel.deleteMany({ workerId: worker._id }),
-				]);
-			}),
+			Promise.all(
+				workers.map((worker) => {
+					worker.shopkeeperId = null;
+					worker.isDependent = "false";
+					return Promise.all([
+						worker.save(),
+						WorkerServiceModel.deleteMany({ workerId: worker._id }),
+					]);
+				})
+			),
 		]);
 
 		const message = "Deleted shopkeeper";
@@ -337,13 +412,57 @@ const removeShopkeeper = async (req, res) => {
 	}
 };
 
+const removeWorkerFromShop = async (req, res) => {
+	try {
+		const shopkeeperId = req.params.shopkeeperId;
+		const workerId = req.query.workerId;
+
+		const [workerUser, worker, shopkeeperUser] = await Promise.all([
+			UserModel.findById(workerId),
+			WorkerModel.findById(workerId),
+			UserModel.findById(shopkeeperId),
+		]);
+
+		if (!shopkeeperUser) {
+			const message = "Shopkeeper not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (!workerUser || !worker) {
+			const message = "Worker not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		worker.shopkeeperId = null;
+		worker.isDependent = "false";
+		await worker.save();
+
+		const services = await ServiceModel.find({ serviceProviderId: workerId });
+		await Promise.all(
+			services.map((service) =>
+				new WorkerServiceModel({ workerId, serviceId: service._id }).save()
+			)
+		);
+
+		let message = "You have been removed from shop";
+		sendNotifications(message, [workerUser.phone], NOTIFICATION.REMOVED_FROM_SHOP);
+
+		message = `${workerUser.userName} removed from shop`;
+		sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.REMOVED_FROM_SHOP);
+		res.json(new Response(RESPONSE.SUCCESS, { message }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 module.exports = {
-	getOnlyShopkeeperById,
 	getShopkeeperById,
-	getShopkeeperByPhone,
+	getShopkeeperWithOrders,
 	getWorkers,
 	getRequestedOrders,
 	registerShopkeeper,
+	addWorker,
 	updateShopkeeper,
 	removeShopkeeper,
+	removeWorkerFromShop,
 };

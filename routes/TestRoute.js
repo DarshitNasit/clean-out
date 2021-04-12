@@ -3,7 +3,7 @@ const WorkerModel = require("../models/Worker");
 const { sendResetPasswordOtp } = require("../controllers/OtpController");
 
 router.get("", async (req, res) => {
-	res.json("Hello");
+	console.log(req.query);
 });
 
 module.exports = router;

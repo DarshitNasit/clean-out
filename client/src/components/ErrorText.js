@@ -1,7 +1,12 @@
 import React from "react";
 
 function ErrorText(props) {
-	return <div className="danger">{props.children}</div>;
+	const { className, children } = props;
+	return (
+		<div className="danger flex flex-row">
+			<p className={className}>{children}</p>
+		</div>
+	);
 }
 
 export default ErrorText;

@@ -14,11 +14,6 @@ const bcrypt = require("bcryptjs");
 const handleError = require("../utilities/errorHandler");
 const encrypt = require("../utilities/encrypt");
 
-const getUserFromSession = async (req, res) => {
-	const user = req.user[0];
-	res.json(new Response(RESPONSE.SUCCESS, { message: "User found", user }));
-};
-
 const getRole = async (userId) => {
 	try {
 		const user = await UserModel.findById(userId);
@@ -35,24 +30,30 @@ const getOrders = async (userId) => {
 			ItemOrderModel.find({ userId }),
 		]);
 
-		serviceOrders = serviceOrders.map(async (serviceOrder) => {
-			const [workerUser, service] = await Promise.all([
-				UserModel.findById(serviceOrder.workerId),
-				ServiceModel.findById(serviceOrder.serviceId),
-			]);
-			return { workerUser, service };
-		});
+		serviceOrders = await Promise.all(
+			serviceOrders.map(async (serviceOrder) => {
+				const [workerUser, service] = await Promise.all([
+					UserModel.findById(serviceOrder.workerId),
+					ServiceModel.findById(serviceOrder.serviceId),
+				]);
+				return { workerUser, service, serviceOrder };
+			})
+		);
 
-		itemOrders = itemOrders.map(async (itemOrder) => {
-			const orderId = itemOrder.orderId;
-			let orderItemPacks = await OrderItemPackModel.find({ orderId });
-			orderItemPacks = orderItemPacks.map(async (orderItemPack) => {
-				const itemId = orderItemPack.itemId;
-				const item = await ItemModel.findById(itemId);
-				return { orderItemPack, item };
-			});
-			return { itemOrder, orderItemPacks };
-		});
+		itemOrders = await Promise.all(
+			itemOrders.map(async (itemOrder) => {
+				const orderId = itemOrder._id;
+				let orderItemPacks = await OrderItemPackModel.find({ orderId });
+				orderItemPacks = await Promise.all(
+					orderItemPacks.map(async (orderItemPack) => {
+						const itemId = orderItemPack.itemId;
+						const item = await ItemModel.findById(itemId);
+						return { orderItemPack, item };
+					})
+				);
+				return { itemOrder, orderItemPacks };
+			})
+		);
 
 		return { serviceOrders, itemOrders };
 	} catch (error) {
@@ -67,12 +68,32 @@ const getUserById = async (req, res) => {
 			UserModel.findById(userId),
 			AddressModel.findById(userId),
 		]);
+
 		if (!user) {
 			const message = "User not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const { serviceOrders, itemOrders } = getOrders(userId);
+		const message = "User found";
+		res.json(new Response(RESPONSE.SUCCESS, { message, user, address }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getUserWithOrders = async (req, res) => {
+	try {
+		const userId = req.params.userId;
+		const [user, address] = await Promise.all([
+			UserModel.findById(userId),
+			AddressModel.findById(userId),
+		]);
+		if (!user) {
+			const message = "User not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const { serviceOrders, itemOrders } = await getOrders(userId);
 		const message = "User found";
 		res.json(
 			new Response(RESPONSE.SUCCESS, { message, user, address, serviceOrders, itemOrders })
@@ -129,10 +150,7 @@ const updateUser = async (req, res) => {
 		const { userName, phone, password, newPassword } = req.body;
 		const { society, area, pincode, city, state } = req.body;
 
-		const [user, address] = await Promise.all([
-			UserModel.findById(userId),
-			AddressModel.findById(userId),
-		]);
+		const user = await UserModel.findById(userId);
 		if (!user) {
 			const message = "User not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
@@ -196,10 +214,10 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
-	getUserFromSession,
 	getRole,
-	getOrders,
 	getUserById,
+	getOrders,
+	getUserWithOrders,
 	getUserByPhone,
 	registerUser,
 	updateUser,

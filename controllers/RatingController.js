@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const UserModel = require("../models/User");
 const RatingModel = require("../models/Rating");
 const ItemModel = require("../models/Item");
+const WorkerServiceModel = require("../models/WorkerService");
 const Response = require("../models/Response");
 const RESPONSE = require("../models/Enums/RESPONSE");
 
@@ -120,7 +121,7 @@ const addRating = async (req, res) => {
 			item.ratingCount++;
 			await Promise.all([item.save(), rating.save()]);
 		} else {
-			const workerService = await WorkerService.findById(targetId);
+			const workerService = await WorkerServiceModel.findById(targetId);
 			workerService.ratingValue = findNewRating(
 				workerService.ratingValue,
 				req.body.ratingValue,

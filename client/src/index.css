@@ -44,6 +44,9 @@
 .btn-main {
 	background-color: var(--main_theme);
 }
+.btn-light {
+	background-color: var(--light_gray);
+}
 .btn-violet {
 	background-color: var(--violet);
 }
@@ -73,8 +76,18 @@
 .light {
 	font-weight: lighter;
 }
+.normal {
+	font-weight: normal;
+}
 .bold {
 	font-weight: bold;
+}
+
+.pos-abs {
+	position: absolute;
+}
+.pos-rel {
+	position: relative;
 }
 
 .flex {
@@ -86,11 +99,44 @@
 .flex-col {
 	flex-direction: column;
 }
+.flex-grow {
+	flex-grow: 1;
+}
+.flex-wrap {
+	flex-wrap: wrap;
+}
+
 .align-center {
 	align-items: center;
 }
+.align-left {
+	align-items: left;
+}
+.align-right {
+	align-items: right;
+}
+
+.text-left {
+	text-align: left;
+}
+.text-center {
+	text-align: center;
+}
+.text-right {
+	text-align: right;
+}
+
 .justify-center {
 	justify-content: center;
+}
+.justify-around {
+	justify-content: space-around;
+}
+.justify-between {
+	justify-content: space-between;
+}
+.justify-evenly {
+	justify-content: space-evenly;
 }
 
 .li-mr-20 > li {
@@ -109,6 +155,9 @@ a:hover {
 select {
 	cursor: pointer;
 }
+.hover-pointer:hover {
+	cursor: pointer;
+}
 
 .top {
 	top: 0;
@@ -123,14 +172,73 @@ select {
 	right: 0;
 }
 
+.width10 {
+	width: 10%;
+}
+.width20 {
+	width: 20%;
+}
+.width30 {
+	width: 30%;
+}
+.width40 {
+	width: 40%;
+}
+.width50 {
+	width: 50%;
+}
+.width60 {
+	width: 60%;
+}
+.width70 {
+	width: 70%;
+}
+.width80 {
+	width: 80%;
+}
+.width90 {
+	width: 90%;
+}
 .width100 {
 	width: 100%;
 }
-
-.hover-pointer:hover {
-	cursor: pointer;
+.width-auto {
+	width: auto;
 }
 
+.height100 {
+	height: 100%;
+}
+.height-auto {
+	height: auto;
+}
+
+.min-h80 {
+	min-height: 80vh;
+}
+
+.br-5 {
+	border-radius: 5px;
+}
+.br-10 {
+	border-radius: 10px;
+}
+
+.mt-5 {
+	margin-top: 5px;
+}
+.mb-5 {
+	margin-bottom: 5px;
+}
+.ml-5 {
+	margin-left: 5px;
+}
+.mr-5 {
+	margin-right: 5px;
+}
+.m-5 {
+	margin: 5px;
+}
 .mt-10 {
 	margin-top: 10px;
 }
@@ -190,6 +298,37 @@ select {
 }
 .m-auto {
 	margin: auto;
+}
+
+.pt-0 {
+	padding-top: 0;
+}
+.pb-0 {
+	padding-bottom: 0;
+}
+.pl-0 {
+	padding-left: 0;
+}
+.pr-0 {
+	padding-right: 0;
+}
+.p-0 {
+	padding: 0;
+}
+.pt-5 {
+	padding-top: 5px;
+}
+.pb-5 {
+	padding-bottom: 5px;
+}
+.pl-5 {
+	padding-left: 5px;
+}
+.pr-5 {
+	padding-right: 5px;
+}
+.p-5 {
+	padding: 5px;
 }
 .pt-10 {
 	padding-top: 10px;

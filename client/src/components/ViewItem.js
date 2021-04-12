@@ -9,7 +9,7 @@ import { Axios } from "../utilities";
 import { setError } from "../redux/actions";
 
 function ViewItem(props) {
-	const { history, match, auth, error } = props;
+	const { history, location, match, auth, error } = props;
 	const { setError } = props;
 
 	const [item, setItem] = useState(null);
@@ -18,26 +18,28 @@ function ViewItem(props) {
 
 	const [itemCount, setItemCount] = useState(1);
 	const [loadMore, setLoadMore] = useState(true);
+
 	useEffect(() => {
 		getItem();
-		async function getItem() {
-			const itemId = match.params?.itemId;
-			if (!itemId) history.goBack();
-			else {
-				const res = await Axios.GET(`/item/withRatings/${itemId}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					setItem(res.data.item);
-					if (auth.isAuthenticated)
-						setRatings(
-							res.data.ratings.filter((rating) => rating.userId !== auth.user._id)
-						);
-					else setRatings(res.data.ratings);
-					setLoading(false);
-				}
-			}
+		return () => {
+			setLoading(true);
+		};
+	}, [location.pathname]);
+
+	async function getItem() {
+		const itemId = match.params.itemId;
+		if (!itemId) history.goBack();
+		else {
+			const res = await Axios.GET(`/item/withRatings/${itemId}`);
+			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+			setItem(res.data.item);
+			if (auth.isAuthenticated)
+				setRatings(res.data.ratings.filter((rating) => rating.userId !== auth.user._id));
+			else setRatings(res.data.ratings);
+			setLoading(false);
 		}
-	}, []);
+	}
 
 	async function editItem() {
 		setError("");
@@ -65,6 +67,7 @@ function ViewItem(props) {
 
 	async function moreRatings() {
 		setError("");
+		if (!ratings.length) return setLoadMore(false);
 		const lastKey = ratings[ratings.length - 1].userId;
 		const res = await Axios.GET(`/rating/ratings/${item._id}`, { lastKey });
 		const newRatings = res.data.ratings.filter((rating) => rating.userId !== auth.user._id);
@@ -72,12 +75,17 @@ function ViewItem(props) {
 		else setLoadMore(false);
 	}
 
+	function changeBlur() {
+		const value = Math.max(0, Math.floor(itemCount));
+		setItemCount(value);
+	}
+
 	return (
-		!loading && (
-			<>
-				{error.error && <ErrorText>{error.error}</ErrorText>}
-				<div className="view_item_container">
-					<div className="left_container">
+		<div className="view_item_container">
+			{!loading && (
+				<>
+					{error.error && <ErrorText>{error.error}</ErrorText>}
+					<div className="left_container align-center">
 						<p className="big-font-size bold">{item.itemName}</p>
 						<img
 							src={`/images/${item.itemImage}`}
@@ -108,6 +116,7 @@ function ViewItem(props) {
 								targetId={item._id}
 								auth={auth}
 								setError={setError}
+								target={"ITEM"}
 							/>
 						)}
 					</div>
@@ -121,6 +130,7 @@ function ViewItem(props) {
 								value={itemCount}
 								min="1"
 								onChange={(event) => setItemCount(event.target.value)}
+								onBlur={changeBlur}
 							/>
 							<p className="ml-50 bold">Price : </p>
 							<input type="text" value={itemCount * item.price} disabled={true} />
@@ -180,9 +190,9 @@ function ViewItem(props) {
 							</div>
 						</div>
 					</div>
-				</div>
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

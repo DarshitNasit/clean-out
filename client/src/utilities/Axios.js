@@ -17,10 +17,10 @@ const PUT = async (URL, data, headers = null) => {
 	return await response.data;
 };
 
-const DELETE = async (URL, data, headers = null) => {
+const DELETE = async (URL, params, headers = null) => {
 	const response = await (headers
-		? axios.delete(URL, { data, headers })
-		: axios.delete(URL, { data }));
+		? axios.delete(URL, { params, headers })
+		: axios.delete(URL, { params }));
 	return await response.data;
 };
 

@@ -11,7 +11,7 @@ import { setError, getDataForHome } from "../redux/actions";
 const initialValues = {
 	serviceName: "",
 	serviceCategory: "",
-	subCategory: [],
+	subCategories: [],
 	description: "",
 };
 
@@ -19,28 +19,28 @@ const onSubmit = async (values, setError, history, user, home) => {
 	setError("");
 	values = {
 		...values,
-		subCategory: values.subCategory
+		subCategories: values.subCategories
 			.filter((value) => {
 				if (!value || isEmptyObject(value) || !value.name.length) return false;
 				return true;
 			})
 			.map((value) => ({ ...value, name: value.name[0] })),
 	};
-	if (!values.subCategory || !values.subCategory.length)
+	if (!values.subCategories || !values.subCategories.length)
 		return setError("Choose at least one sub category");
 
 	const category = values.serviceCategory;
-	const subCategory = home.serviceCategories.filter((value) => value.category === category)[0]
-		.subCategory;
+	const subCategories = home.serviceCategories.filter((value) => value.category === category)[0]
+		.subCategories;
 
-	for (let i = 0; i < values.subCategory.length; i++) {
-		const value = values.subCategory[i];
+	for (let i = 0; i < values.subCategories.length; i++) {
+		const value = values.subCategories[i];
 		if (!value.price || Number(value.price) <= 0)
 			return setError(`${value.name} must have valid price`);
-		for (let j = 0; j < subCategory.length; j++) {
+		for (let j = 0; j < subCategories.length; j++) {
 			if (
-				subCategory[j].name === value.name &&
-				subCategory[j].area &&
+				subCategories[j].name === value.name &&
+				subCategories[j].area &&
 				(!value.mxSqFt || Number(value.mxSqFt) <= 0)
 			)
 				return setError(`${value.name} must have valid square feet size`);
@@ -49,7 +49,7 @@ const onSubmit = async (values, setError, history, user, home) => {
 
 	const res = await Axios.POST(`/service/${user._id}`, values);
 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	else history.push(`/viewService/${res.data.id}`);
+	else history.push(`/viewAllServices`);
 };
 
 const validationSchema = Yup.object({
@@ -59,7 +59,7 @@ const validationSchema = Yup.object({
 });
 
 function AddService(props) {
-	const { history, auth, error, home } = props;
+	const { history, location, auth, error, home } = props;
 	const { setError, getDataForHome } = props;
 	const [loading, setLoading] = useState(true);
 
@@ -69,14 +69,18 @@ function AddService(props) {
 			if (!auth.isAuthenticated) history.push("/login");
 			else if (auth.user.role === ROLE.USER) history.goBack();
 			else if (auth.user.role === ROLE.WORKER) {
-				const res = await Axios.GET(`/worker/workerOnly/${auth.user._id}`);
+				const res = await Axios.GET(`/worker/${auth.user._id}`);
 				if (res.data.worker.isDependent === "true") history.goBack();
 				else if (!home.isLoaded) getDataForHome(history);
 				else setLoading(false);
 			} else if (!home.isLoaded) getDataForHome(history);
 			else setLoading(false);
 		}
-	}, []);
+
+		return () => {
+			setLoading(true);
+		};
+	}, [location.pathname]);
 
 	useEffect(() => {
 		if (home.isLoaded) {
@@ -86,9 +90,9 @@ function AddService(props) {
 	}, [home]);
 
 	return (
-		!loading && (
-			<>
-				<div className="card_container">
+		<div className="card_container">
+			{!loading && (
+				<>
 					<h2 className="mt-20 mb-10">Add Service</h2>
 					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
@@ -126,7 +130,7 @@ function AddService(props) {
 											onChange={(event) => {
 												formik.setValues((prev) => ({
 													...prev,
-													subCategory: [],
+													subCategories: [],
 												}));
 												formik.handleChange(event);
 											}}
@@ -142,7 +146,7 @@ function AddService(props) {
 										</Field>
 									</div>
 
-									<FieldArray name="subCategory">
+									<FieldArray name="subCategories">
 										{(fieldArrayProps) => {
 											const { serviceCategory } = fieldArrayProps.form.values;
 											const categoriesOne = home.serviceCategories.find(
@@ -150,7 +154,7 @@ function AddService(props) {
 											);
 											return (
 												<div className="sub_category_input">
-													{categoriesOne?.subCategory.map(
+													{categoriesOne.subCategories.map(
 														(subCategory, index) => {
 															return (
 																<div
@@ -159,23 +163,24 @@ function AddService(props) {
 																>
 																	<Field
 																		type="checkbox"
-																		name={`subCategory[${index}].name`}
+																		name={`subCategories[${index}].name`}
 																		value={subCategory.name}
-																		id={`subCategory[${index}].name`}
+																		id={`subCategories[${index}].name`}
 																	></Field>
 																	<label
 																		className="hover-pointer"
-																		htmlFor={`subCategory[${index}].name`}
+																		htmlFor={`subCategories[${index}].name`}
 																	>
 																		{subCategory.name}
 																	</label>
-																	{formik.values.subCategory[
+
+																	{formik.values.subCategories[
 																		index
 																	]?.name?.length > 0 && (
 																		<>
 																			<Field
 																				type="number"
-																				name={`subCategory[${index}].price`}
+																				name={`subCategories[${index}].price`}
 																			></Field>
 																			<label>Price</label>
 																			{subCategory.area && (
@@ -183,7 +188,7 @@ function AddService(props) {
 																					<Field
 																						type="number"
 																						className="btn-main"
-																						name={`subCategory[${index}].mxSqFt`}
+																						name={`subCategories[${index}].mxSqFt`}
 																					></Field>
 																					<label>
 																						Max SqFt
@@ -214,9 +219,9 @@ function AddService(props) {
 							);
 						}}
 					</Formik>
-				</div>
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

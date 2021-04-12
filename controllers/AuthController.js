@@ -24,13 +24,7 @@ const loginUser = async (req, res) => {
 
 		const isMatch = await bcrypt.compare(password, user.password);
 		if (isMatch) {
-			const payload = {
-				_id: user._id,
-				userName: user.userName,
-				phone: user.phone,
-				role: user.role,
-			};
-
+			const payload = { _id: user._id, role: user.role };
 			const token = await getJwt(payload);
 			const message = "Logged In";
 			res.json(new Response(RESPONSE.SUCCESS, { message, user: payload, token }));

@@ -2,7 +2,9 @@ const router = require("express").Router();
 const {
 	getService,
 	getWorkerServiceWithRatings,
+	getServiceCount,
 	getServices,
+	getWorkerServicesForStore,
 	addService,
 	updateService,
 	deleteService,
@@ -12,13 +14,19 @@ const {
 /**
  * GET
  */
-// body -> {workerId}
+// body -> {q:pincode q:subCategories, q:sortBy, q:page, q:serviceCategory}
+// resp -> {success, message, services, totalItems}
+router.get("/store", getWorkerServicesForStore);
+// body -> {}
 // resp -> {success, message, service}
 router.get("/:serviceId", getService);
 // body -> {}
 // resp -> {success, message, service, workerUser, worker, workerService, ratings}
 router.get("/workerService/:workerServiceId", getWorkerServiceWithRatings);
-// body -> {lastKey}
+// body -> {}
+// resp -> {success, message, serviceCount}
+router.get("/count/:serviceProviderId", getServiceCount);
+// body -> {q:lastKey}
 // resp -> {success, message, services}
 router.get("/services/:serviceProviderId", getServices);
 
@@ -28,9 +36,9 @@ router.get("/services/:serviceProviderId", getServices);
 // body -> {serviceName, price, maxSquareFeet, serviceCategory, subCategory, description}
 // resp -> {success, message, id:serviceId}
 router.post("/:serviceProviderId", addService);
-// body -> {userId, workerId, price, metaData}
+// body -> {userId, price, metaData}
 // resp -> {success, message, id:serviceOrderId}
-router.post("/bookService/:serviceId", bookService);
+router.post("/bookService/:workerServiceId", bookService);
 
 /**
  * PUT

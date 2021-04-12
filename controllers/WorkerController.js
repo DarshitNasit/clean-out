@@ -1,21 +1,24 @@
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const WorkerModel = require("../models/Worker");
 const LocationModel = require("../models/Location");
 const UserModel = require("../models/User");
 const AddressModel = require("../models/Address");
-const mongoose = require("mongoose");
+const ShopkeeperModel = require("../models/Shopkeeper");
 const ServiceModel = require("../models/Service");
 const ServiceOrderModel = require("../models/ServiceOrder");
 const WorkerServiceModel = require("../models/WorkerService");
 const Response = require("../models/Response");
 const RESPONSE = require("../models/Enums/RESPONSE");
+const NOTIFICATION = require("../models/Enums/NOTIFICATION");
 const { getOrders } = require("./UserController");
 
 const encrypt = require("../utilities/encrypt");
 const handleError = require("../utilities/errorHandler");
 const { stringToArray, arrayToString } = require("../utilities/formatter");
 const { deleteFiles, useSharp } = require("../utilities/FileHandlers");
+const { sendNotifications } = require("../utilities/notifications");
 
 const getWorkerWithShopkeeperById = async (workerId) => {
 	try {
@@ -41,24 +44,49 @@ const getWorkerWithShopkeeperById = async (workerId) => {
 	}
 };
 
-const getOnlyWorkerById = async (req, res) => {
+const getWorkerById = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
-		const worker = await WorkerModel.findById(workerId);
-		if (!worker) {
+		const [workerUser, address, worker] = await Promise.all([
+			UserModel.findById(workerId),
+			AddressModel.findById(workerId),
+			WorkerModel.findById(workerId),
+		]);
+		if (!workerUser || !worker || !address) {
 			const message = "Worker not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const pincodes = arrayToString(await LocationModel.find({ workerId }));
+		const pipeline = [
+			{ $match: { workerId: mongoose.Types.ObjectId(workerId) } },
+			{
+				$group: {
+					_id: "$workerId",
+					pincodes: { $push: "$pincode" },
+				},
+			},
+			{ $project: { _id: 0, pincodes: 1 } },
+		];
+
+		const pincodes = await LocationModel.aggregate(pipeline);
 		const message = "Worker found";
-		res.json(new Response(RESPONSE.SUCCESS, { message, worker: { ...worker, pincodes } }));
+		res.json(
+			new Response(RESPONSE.SUCCESS, {
+				message,
+				workerUser,
+				address,
+				worker: {
+					...worker._doc,
+					pincodes: arrayToString(pincodes[0].pincodes),
+				},
+			})
+		);
 	} catch (error) {
 		handleError(error);
 	}
 };
 
-const getWorkerById = async (req, res) => {
+const getWorkerWithOrders = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
 		const [workerUser, address, worker] = await Promise.all([
@@ -71,7 +99,12 @@ const getWorkerById = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const { serviceOrders, itemOrders } = getOrders(workerId);
+		let shopkeeperUser = null;
+		if (worker.isDependent === "true") {
+			shopkeeperUser = await UserModel.findById(worker.shopkeeperId);
+		}
+
+		const { serviceOrders, itemOrders } = await getOrders(workerId);
 		const message = "Found worker";
 		res.json(
 			new Response(RESPONSE.SUCCESS, {
@@ -81,28 +114,9 @@ const getWorkerById = async (req, res) => {
 				worker,
 				serviceOrders,
 				itemOrders,
+				shopkeeperUser,
 			})
 		);
-	} catch (error) {
-		handleError(error);
-	}
-};
-
-const getWorkerByPhone = async (req, res) => {
-	try {
-		const phone = req.body.phone;
-		const workerUser = await UserModel.findOne({ phone });
-		const [address, worker] = await Promise.all([
-			AddressModel.findById(workerUser._id),
-			WorkerModel.findById(workerUser._id),
-		]);
-		if (!workerUser || !worker) {
-			const message = "Worker not found";
-			return res.json(new Response(RESPONSE.FAILURE, { message }));
-		}
-
-		const message = "Found worker";
-		res.json(new Response(RESPONSE.SUCCESS, { message, workerUser, address, worker }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -111,7 +125,7 @@ const getWorkerByPhone = async (req, res) => {
 const getRequestedOrders = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
-		const lastKey = req.body.lastKey || "";
+		const lastKey = req.body.lastKey || null;
 
 		const workerUser = await UserModel.findById(workerId);
 		if (!workerUser) {
@@ -119,29 +133,85 @@ const getRequestedOrders = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		let serviceOrders =
-			lastKey == ""
-				? await ServiceOrderModel.find({ workerId })
-						.sort({ placedDate: -1 })
-						.limit(Number(process.env.LIMIT_ORDERS))
-				: await ServiceOrderModel.find({ workerId, _id: { $gt: lastKey } })
-						.sort({ placedDate: -1 })
-						.limit(Number(process.env.LIMIT_ORDERS));
+		const query = { workerId: mongoose.Types.ObjectId(workerId) };
+		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
 
-		serviceOrders = await Promise.all(
-			serviceOrders.map(async (serviceOrder) => {
-				const [user, address, service] = await Promise.all([
-					UserModel.findById(serviceOrder.userId),
-					AddressModel.findById(serviceOrder.userId),
-					ServiceModel.findById(serviceOrder.serviceId),
-				]);
-
-				return { user, address, service, serviceOrder };
-			})
-		);
+		const serviceOrders = await ServiceOrderModel.aggregate([
+			{ $match: query },
+			{ $limit: Number(process.env.LIMIT_ORDERS) },
+			{
+				$lookup: {
+					from: "Service",
+					localField: "serviceId",
+					foreignField: "_id",
+					as: "service",
+				},
+			},
+			{ $unwind: "$service" },
+			{
+				$lookup: {
+					from: "User",
+					localField: "userId",
+					foreignField: "_id",
+					as: "user",
+				},
+			},
+			{ $unwind: "$user" },
+			{
+				$lookup: {
+					from: "Address",
+					localField: "userId",
+					foreignField: "_id",
+					as: "address",
+				},
+			},
+			{ $unwind: "$address" },
+		]);
 
 		const message = "Orders found";
 		res.json(new Response(RESPONSE.SUCCESS, { message, serviceOrders }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getShopkeeperRequest = async (req, res) => {
+	try {
+		const workerId = req.params.workerId;
+		const worker = await WorkerModel.findById(workerId);
+		if (!worker) {
+			const message = "Worker not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (worker.isDependent !== "requested") {
+			const message = "Request not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const shopkeeperId = worker.shopkeeperId;
+		const [shopkeeperUser, shopkeeper] = await Promise.all([
+			UserModel.findById(shopkeeperId),
+			ShopkeeperModel.findById(shopkeeperId),
+		]);
+
+		if (!shopkeeperUser) {
+			worker.shopkeeperId = null;
+			worker.isDependent = "false";
+			await worker.save();
+
+			const message = "Request not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const message = "Request found";
+		const request = {
+			shopkeeperId,
+			shopkeeperName: shopkeeperUser.userName,
+			phone: shopkeeperUser.phone,
+			shopName: shopkeeper.shopName,
+		};
+		return res.json(new Response(RESPONSE.SUCCESS, { message, request }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -185,6 +255,65 @@ const registerWorker = async (req, res) => {
 
 		const message = "Registered worker";
 		res.json(new Response(RESPONSE.SUCCESS, { message, id: _id }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const setShopkeeperResponse = async (req, res) => {
+	try {
+		const workerId = req.params.workerId;
+		const response = req.body.response;
+
+		const worker = await WorkerModel.findById(workerId);
+		if (!worker) {
+			const message = "Worker not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (worker.isDependent !== "requested") {
+			const message = "Cannot accepted";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const [workerUser, shopkeeperUser] = await Promise.all([
+			UserModel.findById(workerId),
+			UserModel.findById(worker.shopkeeperId),
+		]);
+		if (!shopkeeperUser) {
+			const message = "Shopkeeper not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (!response) {
+			worker.shopkeeperId = null;
+			worker.isDependent = "false";
+
+			let message = `${workerUser.userName} has rejected your request.`;
+			sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.REQUEST_REJECTED);
+			await worker.save();
+
+			message = "Rejected request";
+			return res.json(new Response(RESPONSE.SUCCESS, { message }));
+		}
+
+		await WorkerServiceModel.deleteMany({ workerId });
+
+		const services = await ServiceModel.find({ serviceProviderId: worker.shopkeeperId });
+		await Promise.all(
+			services.map((service) =>
+				new WorkerServiceModel({ workerId, serviceId: service._id }).save()
+			)
+		);
+
+		worker.isDependent = "true";
+		await worker.save();
+
+		let message = `${workerUser.userName} has accepted your request`;
+		sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.REQUEST_ACCEPTED);
+
+		message = "Request accepted";
+		return res.json(new Response(RESPONSE.SUCCESS, { message }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -253,7 +382,9 @@ const updateWorker = async (req, res) => {
 			workerUser.save(),
 			AddressModel.findByIdAndUpdate(workerId, { society, area, pincode, city, state }),
 			LocationModel.insertMany(locations),
-			LocationModel.deleteMany(oldLocations),
+			Promise.all(
+				oldLocations.map((oldLocation) => LocationModel.findByIdAndDelete(oldLocation._id))
+			),
 		]);
 
 		const message = "Updated worker";
@@ -293,13 +424,56 @@ const removeWorker = async (req, res) => {
 	}
 };
 
+const leaveShop = async (req, res) => {
+	try {
+		const workerId = req.params.workerId;
+		const [workerUser, worker] = await Promise.all([
+			UserModel.findById(workerId),
+			WorkerModel.findById(workerId),
+		]);
+
+		if (!workerUser) {
+			const message = "Worker not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		if (worker.isDependent !== "true") {
+			const message = "Invalid request";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const shopkeeperUser = await UserModel.findById(worker.shopkeeperId);
+		let message = `${workerUser.userName} has left the shop.`;
+		sendNotifications(message, [shopkeeperUser.phone], NOTIFICATION.LEFT_SHOP);
+
+		worker.shopkeeperId = null;
+		worker.isDependent = "false";
+		const services = await ServiceModel.find({ serviceProviderId: workerId });
+		await Promise.all([
+			worker.save(),
+			Promise.all(
+				services.map((service) =>
+					new WorkerServiceModel({ workerId, serviceId: service._id }).save()
+				)
+			),
+		]);
+
+		message = "Left shop";
+		res.json(new Response(RESPONSE.SUCCESS, { message }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 module.exports = {
-	getOnlyWorkerById,
 	getWorkerById,
-	getWorkerByPhone,
+	getWorkerWithOrders,
 	getWorkerWithShopkeeperById,
 	getRequestedOrders,
+	getShopkeeperRequest,
 	registerWorker,
+	setShopkeeperResponse,
 	updateWorker,
 	removeWorker,
+	leaveShop,
 };

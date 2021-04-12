@@ -1,188 +1,109 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
-import StarIcon from "@material-ui/icons/Star";
 
 import ErrorText from "./ErrorText";
-import FeedbackForm from "./FeedbackForm";
 import { RESPONSE } from "../enums";
 import { Axios } from "../utilities";
 import { setError } from "../redux/actions";
 
 function ViewService(props) {
-	const { history, match, auth, error } = props;
+	const { history, location, match, auth, error } = props;
 	const { setError } = props;
 
+	const serviceId = match.params.serviceId;
 	const [service, setService] = useState(null);
-	const [ratings, setRatings] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [metaData, setMetaData] = useState(null);
-	const [loadMore, setLoadMore] = useState(true);
 
 	useEffect(() => {
-		// getService();
-		// async function getItem() {
-		// 	const itemId = match.params?.itemId;
-		// 	if (!itemId) history.goBack();
-		// 	else {
-		// 		const res = await Axios.GET(`/item/withRatings/${itemId}`);
-		// 		if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-		// 		else {
-		// 			setItem(res.data.item);
-		// 			if (auth.isAuthenticated)
-		// 				setRatings(
-		// 					res.data.ratings.filter((rating) => rating.userId !== auth.user._id)
-		// 				);
-		// 			else setRatings(res.data.ratings);
-		// 			setLoading(false);
-		// 		}
-		// 	}
-		// }
-	}, []);
+		if (!serviceId) history.goBack();
 
-	// async function editItem() {
-	// 	setError("");
-	// 	history.push(`/updateItem/${item._id}`);
-	// }
+		getService();
+		async function getService() {
+			const res = await Axios.GET(`/service/${serviceId}`);
+			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+			if (res.data.service.serviceProviderId !== auth.user._id) history.goBack();
+			setService(res.data.service);
+			setLoading(false);
+		}
 
-	// async function deleteItem() {
-	// 	setError("");
-	// 	const res = Axios.DELETE(`/item/${item._id}`);
-	// 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	// 	else history.goBack();
-	// }
+		return () => {
+			setLoading(true);
+		};
+	}, [location.pathname]);
 
-	// async function addToCart() {
-	// 	setError("");
-	// 	if (!Number.isInteger(Number(itemCount))) return setError("Item count must be integer");
-	// 	const res = await Axios.POST(`/item/toCart/${item._id}`, {
-	// 		userId: auth.user._id,
-	// 		count: itemCount,
-	// 		price: itemCount * item.price,
-	// 	});
-	// 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	// 	else history.push("/cart");
-	// }
+	function editService() {
+		setError("");
+		history.push(`/updateService/${serviceId}`);
+	}
 
-	// async function moreRatings() {
-	// 	setError("");
-	// 	const lastKey = ratings[ratings.length - 1].userId;
-	// 	const res = await Axios.GET(`/rating/ratings/${item._id}`, { lastKey });
-	// 	const newRatings = res.data.ratings.filter((rating) => rating.userId !== auth.user._id);
-	// 	if (newRatings.length) setRatings((prevRatings) => [...prevRatings, ...newRatings]);
-	// 	else setLoadMore(false);
-	// }
+	async function deleteService() {
+		setError("");
+		const res = await Axios.DELETE(`/service/${serviceId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+		history.goBack();
+	}
 
 	return (
-		!loading && (
-			<>
-				{/* {error.error && <ErrorText>{error.error}</ErrorText>}
-				<div className="view_item_container">
-					<div className="left_container">
-						<p className="big-font-size bold">{item.itemName}</p>
-						<img
-							src={`/images/${item.itemImage}`}
-							className="mt-10"
-							width="60%"
-							alt={item.itemName}
-						/>
-						<div className="show_rating mt-10">
-							{item.ratingValue}
-							<StarIcon className="violet" />
-							<div className="ml-10">[{item.ratingCount}]</div>
-						</div>
-
-						{auth.isAuthenticated && item.shopkeeperId === auth.user._id && (
-							<div className="buttons mt-10">
-								<button className="btn btn-success" onClick={editItem}>
-									Edit
-								</button>
-								<button className="btn btn-danger ml-10" onClick={deleteItem}>
-									Delete
-								</button>
-							</div>
-						)}
-
-						{auth.isAuthenticated && item.shopkeeperId !== auth.user._id && (
-							<FeedbackForm
-								className="mt-50 mb-50"
-								targetId={item._id}
-								auth={auth}
-								setError={setError}
+		<div className="card_container">
+			{!loading && (
+				<>
+					<h2 className="mt-20 mb-10">{service.serviceName}</h2>
+					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
+					<div className="card mb-50">
+						<div className="form-control">
+							<label>Description</label>
+							<textarea
+								disabled
+								className="height-auto"
+								value={service.description}
+								rows="5"
 							/>
-						)}
-					</div>
-
-					<div className="right_container">
-						<div className="flex flex-row ml-50 align-center">
-							<p className="bold">Items : </p>
-							<input
-								type="number"
-								className="ml-10"
-								value={itemCount}
-								min="1"
-								onChange={(event) => setItemCount(event.target.value)}
-							/>
-							<p className="ml-50 bold">Price : </p>
-							<input type="text" value={itemCount * item.price} disabled={true} />
-							<p className="bold">
-								{item.isAvailable ? "Available" : "Not available"}
-							</p>
 						</div>
-						<div className="flex flex-col ml-50 mt-20">
-							<p className="big-font-size bold">Description</p>
-							<p className="small-font-size">{item.description}</p>
+						<div className="form-control">
+							<label>Category</label>
+							<input type="text" disabled value={service.serviceCategory} />
 						</div>
-						<div className="flex flex-row mt-20 align-center width100">
-							<p className="bold ml-50">Total orders : </p>
-							<input
-								type="text"
-								className="right"
-								value={item.orderedCount}
-								disabled={true}
-							/>
-							{auth.isAuthenticated && auth.user._id !== item.shopkeeperId && (
-								<button
-									className="btn btn-violet ml-auto mr-50"
-									type="button"
-									onClick={addToCart}
-									disabled={!item.isAvailable}
-								>
-									Add to Cart
-								</button>
-							)}
-						</div>
-
-						<div className="flex flex-col mt-50 width100">
-							<div className="ml-50">
-								<p className="bold large-font-size">Ratings</p>
-								{ratings.map((rating) => (
-									<div key={rating._id} className="rating_box mt-10">
-										<div className="pl-10 pt-10 pb-10">
-											<div className="flex flex-row align-center">
-												<p className="bold big-font-size">
-													{rating.userName}
-												</p>
-												<p className="ml-50">{rating.ratingValue}/5</p>
+						<div className="width90">
+							{service.subCategories.map((subCategory) => (
+								<div key={subCategory.name} className="flex flex-row align-center">
+									<p className="small-font-size">{subCategory.name}</p>
+									<div className="flex flex-row ml-auto mt-5">
+										{subCategory.mxSqFt && (
+											<div className="form-control-3 flex flex-row align-center ml-5">
+												<input
+													type="text"
+													disabled
+													value={subCategory.mxSqFt}
+													className="ml-auto"
+												/>
+												<p className="ml-5 small-font-size mr-5">MxSqFt</p>
 											</div>
-											<p className="">{rating.description}</p>
+										)}
+										<div className="form-control-3 flex flex-row align-center">
+											<input
+												type="text"
+												disabled
+												value={subCategory.price}
+												className="ml-auto"
+											/>
+											<p className="normal small-font-size ml-5">Price</p>
 										</div>
 									</div>
-								))}
-								<button
-									type="button"
-									className="btn btn-violet mt-10"
-									style={{ width: "fit-content" }}
-									onClick={moreRatings}
-									disabled={!loadMore || !ratings.length}
-								>
-									Load More
-								</button>
-							</div>
+								</div>
+							))}
+						</div>
+						<div className="buttons mt-10">
+							<button className="btn btn-success" onClick={editService}>
+								Edit
+							</button>
+							<button className="btn btn-danger ml-10" onClick={deleteService}>
+								Delete
+							</button>
 						</div>
 					</div>
-				</div> */}
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

@@ -3,7 +3,7 @@ const ServiceCategoryModel = require("../models/ServiceCategory");
 const ServiceCategories = [
 	{
 		category: "Bathroom Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Bathtub Cleaning", area: false, qty: true },
 			{ name: "Geyser Cleaning", area: false, qty: true },
 			{ name: "Wash Basin Cleaning", area: false, qty: true },
@@ -18,12 +18,12 @@ const ServiceCategories = [
 	},
 	{
 		category: "Kitchen Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Trolley Cleaning", area: false, qty: true },
 			{ name: "Ceiling Fan Cleaning", area: false, qty: true },
 			{ name: "Exhaust Fan Cleaning", area: false, qty: true },
 			{ name: "Window Cleaning", area: false, qty: true },
-			{ name: "Fridge Cleaning", area: true, qty: false },
+			{ name: "Fridge Cleaning", area: false, qty: false },
 			{ name: "Microwave Cleaning", area: false, qty: true },
 			{ name: "Mixer Cleaning", area: false, qty: true },
 			{ name: "Gas Stove Cleaning", area: false, qty: true },
@@ -34,7 +34,7 @@ const ServiceCategories = [
 	},
 	{
 		category: "Furniture Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Cushion Cleaning", area: false, qty: true },
 			{ name: "Sofa Cleaning", area: true, qty: false },
 			{ name: "Carpet Cleaning", area: true, qty: false },
@@ -52,7 +52,7 @@ const ServiceCategories = [
 	},
 	{
 		category: "Room Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Floor Cleaning", area: true, qty: false },
 			{ name: "Single Bed Cleaning", area: false, qty: true },
 			{ name: "Double Bed Cleaning", area: false, qty: true },
@@ -64,7 +64,7 @@ const ServiceCategories = [
 	},
 	{
 		category: "Garden Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Lawn Cutting", area: true, qty: false },
 			{ name: "Watering", area: true, qty: false },
 			{ name: "Sweeping", area: true, qty: false },
@@ -73,7 +73,7 @@ const ServiceCategories = [
 	},
 	{
 		category: "Vehicle Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "Hatchback Cleaning", area: false, qty: true },
 			{ name: "Sedan Cleaning", area: false, qty: true },
 			{ name: "SUV Cleaning", area: false, qty: true },
@@ -88,7 +88,7 @@ const ServiceCategories = [
 	},
 	{
 		category: "Full House Cleaning",
-		subCategory: [
+		subCategories: [
 			{ name: "1BHK Cleaning", area: false, qty: true },
 			{ name: "2BHK Cleaning", area: false, qty: true },
 			{ name: "3BHK Cleaning", area: false, qty: true },

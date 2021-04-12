@@ -17,13 +17,13 @@ router.post("/resetPassword", sendResetPasswordOtp);
 router.post("/serviceOrder/:serviceOrderId", sendServiceOrderOtp);
 
 /**
- * DELETE
+ * PUT
  */
 // body -> {phone, OTP}
 // resp -> {success, message}
-router.delete("/resetPassword", verifyResetPasswordOtp);
-// body -> {}
+router.put("/resetPassword", verifyResetPasswordOtp);
+// body -> {OTP}
 // resp -> {success, message}
-router.delete("/serviceOrder/:serviceOrderId", verifyServiceOrderOtp);
+router.put("/serviceOrder/:serviceOrderId", verifyServiceOrderOtp);
 
 module.exports = router;

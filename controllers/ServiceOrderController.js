@@ -1,6 +1,7 @@
 const moment = require("moment");
 
 const UserModel = require("../models/User");
+const AddressModel = require("../models/Address");
 const ServiceOrderModel = require("../models/ServiceOrder");
 const ServiceModel = require("../models/Service");
 const WorkerModel = require("../models/Worker");
@@ -26,8 +27,9 @@ const getServiceOrder = async (req, res) => {
 
 		const workerId = order.workerId;
 		const serviceId = order.serviceId;
-		const [user, workerUser, worker, service, workerService] = await Promise.all([
+		const [user, address, workerUser, worker, service, [workerService]] = await Promise.all([
 			UserModel.findById(order.userId),
+			AddressModel.findById(order.userId),
 			UserModel.findById(workerId),
 			WorkerModel.findById(workerId),
 			ServiceModel.findById(serviceId),
@@ -40,6 +42,7 @@ const getServiceOrder = async (req, res) => {
 				message,
 				serviceOrder: order,
 				user,
+				address,
 				workerUser,
 				worker,
 				service,
@@ -103,12 +106,6 @@ const cancelOrder = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const isAdministration = req.user.role == ROLE.COADMIN || req.user.role == ROLE.ADMIN;
-		if (order.status != STATUS.PENDING || !isAdministration) {
-			const message = "Cannot cancel";
-			return res.json(new Response(RESPONSE.FAILURE, { message }));
-		}
-
 		const userId = order.userId;
 		const workerId = order.workerId;
 		const serviceId = order.serviceId;
@@ -163,6 +160,7 @@ const replaceOrder = async (req, res) => {
 		let message = null;
 		if (!user) message = "User not found";
 		else if (!service) message = "Service not found";
+		else if (!workerUser) message = "Worker not found";
 		else if (!workerService) message = "Service for worker not found";
 
 		if (message) return res.json(new Response(RESPONSE.FAILURE, { message }));
@@ -173,6 +171,7 @@ const replaceOrder = async (req, res) => {
 		newOrder.price = order.price;
 		newOrder.workerId = workerId;
 		newOrder.serviceId = serviceId;
+		newOrder.serviceCategory = order.serviceCategory;
 		newOrder.metaData = order.metaData;
 		newOrder.shopkeeperId = order.shopkeeperId;
 		workerService.orderedCount++;

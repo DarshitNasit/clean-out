@@ -29,7 +29,7 @@ const validationSchema = Yup.object({
 });
 
 function UpdateItem(props) {
-	const { history, match, auth, error } = props;
+	const { history, location, match, auth, error } = props;
 	const { setError } = props;
 
 	const itemId = match.params?.itemId;
@@ -59,7 +59,11 @@ function UpdateItem(props) {
 				}
 			}
 		}
-	}, []);
+
+		return () => {
+			setLoading(true);
+		};
+	}, [location.pathname]);
 
 	const onFileUpload = useCallback((name, files) => {
 		setItemImageError(null);
@@ -67,9 +71,9 @@ function UpdateItem(props) {
 	}, []);
 
 	return (
-		!loading && (
-			<>
-				<div className="card_container">
+		<div className="card_container">
+			{!loading && (
+				<>
 					<h2 className="mb-10">Add Cleaning Product</h2>
 					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
@@ -140,9 +144,9 @@ function UpdateItem(props) {
 							);
 						}}
 					</Formik>
-				</div>
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

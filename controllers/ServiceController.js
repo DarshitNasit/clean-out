@@ -4,9 +4,9 @@ const UserModel = require("../models/User");
 const ServiceModel = require("../models/Service");
 const ShopkeeperModel = require("../models/Shopkeeper");
 const WorkerModel = require("../models/Worker");
+const LocationModel = require("../models/Location");
 const ServiceOrderModel = require("../models/ServiceOrder");
 const WorkerServiceModel = require("../models/WorkerService");
-const RatingModel = require("../models/Rating");
 const Response = require("../models/Response");
 const ROLE = require("../models/Enums/ROLE");
 const RESPONSE = require("../models/Enums/RESPONSE");
@@ -14,6 +14,7 @@ const NOTIFICATION = require("../models/Enums/NOTIFICATION");
 const { getRatingsWithUserName } = require("./RatingController");
 
 const handleError = require("../utilities/errorHandler");
+const { stringToArray } = require("../utilities/formatter");
 const { sendNotifications } = require("../utilities/notifications");
 
 const getService = async (req, res) => {
@@ -47,7 +48,7 @@ const getWorkerServiceWithRatings = async (req, res) => {
 			UserModel.findById(workerId),
 			WorkerModel.findById(workerId),
 			ServiceModel.findById(serviceId),
-			getRatingsWithUserName(serviceId),
+			getRatingsWithUserName(workerServiceId),
 		]);
 
 		const message = "Found service";
@@ -66,22 +67,228 @@ const getWorkerServiceWithRatings = async (req, res) => {
 	}
 };
 
+const getServiceCount = async (req, res) => {
+	try {
+		const serviceProviderId = req.params.serviceProviderId;
+
+		const query = { serviceProviderId: mongoose.Types.ObjectId(serviceProviderId) };
+		const serviceCount = await ServiceModel.aggregate([
+			{ $match: query },
+			{ $count: "serviceCount" },
+		]);
+
+		const message = "Found count";
+		res.json(new Response(RESPONSE.SUCCESS, { message, count: serviceCount.serviceCount }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 const getServices = async (req, res) => {
 	try {
 		const serviceProviderId = req.params.serviceProviderId;
-		const lastKey = req.body.lastKey || "";
+		const lastKey = req.query.lastKey || null;
 
-		const services =
-			lastKey == ""
-				? await ServiceModel.find({ serviceProviderId }).limit(
-						Number(process.env.LIMIT_SERVICES)
-				  )
-				: await ServiceModel.find({ serviceProviderId, _id: { $gt: lastKey } }).limit(
-						Number(process.env.LIMIT_SERVICES)
-				  );
+		const query = { serviceProviderId: mongoose.Types.ObjectId(serviceProviderId) };
+		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
+		const services = await ServiceModel.aggregate([
+			{ $match: query },
+			{ $limit: Number(process.env.LIMIT_SERVICES) },
+		]);
 
 		const message = "Found services";
 		res.json(new Response(RESPONSE.SUCCESS, { message, services }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
+const getWorkerServicesForStore = async (req, res) => {
+	try {
+		const page = req.query.page || 1;
+		const sortBy = req.query.sortBy || "price";
+		const pincode = req.query.pincode;
+		const serviceCategory = req.query.serviceCategory;
+		let subCategories = req.query.subCategories;
+		if (subCategories) subCategories = stringToArray(subCategories);
+		else subCategories = [];
+
+		const pipeline = [
+			{ $match: { pincode: pincode } },
+			{ $project: { _id: 0, workerId: 1 } },
+			{
+				$lookup: {
+					from: "WorkerService",
+					localField: "workerId",
+					foreignField: "workerId",
+					as: "workerService",
+				},
+			},
+			{ $match: { $expr: { $gt: [{ $size: "$workerService" }, 0] } } },
+			{ $unwind: "$workerService" },
+			{
+				$lookup: {
+					from: "Service",
+					localField: "workerService.serviceId",
+					foreignField: "_id",
+					as: "service",
+				},
+			},
+			{ $unwind: "$service" },
+			{ $match: { "service.serviceCategory": serviceCategory } },
+		];
+
+		subCategories.forEach((subCategory) => {
+			console.log(subCategory);
+			pipeline.push({
+				$match: {
+					"service.subCategories": {
+						$elemMatch: {
+							name: subCategory,
+						},
+					},
+				},
+			});
+		});
+
+		let pipelineCount = [];
+		if (sortBy === "price") {
+			pipeline.push(
+				{ $unwind: "$service.subCategories" },
+				{
+					$group: {
+						_id: "$workerService._id",
+						price: { $sum: "$service.subCategories.price" },
+					},
+				},
+				{ $sort: { price: 1 } }
+			);
+
+			pipelineCount = [...pipeline, { $count: "totalItems" }];
+
+			pipeline.push(
+				{ $skip: Number(process.env.LIMIT_SERVICES) * (page - 1) },
+				{ $limit: Number(process.env.LIMIT_SERVICES) },
+				{
+					$lookup: {
+						from: "WorkerService",
+						localField: "_id",
+						foreignField: "_id",
+						as: "workerService",
+					},
+				},
+				{ $unwind: "$workerService" },
+				{
+					$lookup: {
+						from: "User",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "workerUser",
+					},
+				},
+				{ $unwind: "$workerUser" },
+				{
+					$lookup: {
+						from: "Worker",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "worker",
+					},
+				},
+				{ $unwind: "$worker" },
+				{
+					$lookup: {
+						from: "Service",
+						localField: "workerService.serviceId",
+						foreignField: "_id",
+						as: "service",
+					},
+				},
+				{ $unwind: "$service" }
+			);
+		} else if (sortBy === "ratingValue") {
+			pipeline.push({ $sort: { "workerService.ratingValue": -1 } });
+			pipelineCount = [...pipeline, { $count: "totalItems" }];
+			pipeline.push(
+				{ $skip: Number(process.env.LIMIT_SERVICES) * (page - 1) },
+				{ $limit: Number(process.env.LIMIT_SERVICES) },
+				{
+					$project: {
+						_id: "$workerService._id",
+						workerService: 1,
+						service: 1,
+					},
+				},
+				{
+					$lookup: {
+						from: "User",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "workerUser",
+					},
+				},
+				{ $unwind: "$workerUser" },
+				{
+					$lookup: {
+						from: "Worker",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "worker",
+					},
+				},
+				{ $unwind: "$worker" }
+			);
+		} else if (sortBy === "orderedCount") {
+			pipeline.push({ $sort: { "workerService.orderedCount": -1 } });
+			pipelineCount = [...pipeline, { $count: "totalItems" }];
+			pipeline.push(
+				{ $skip: Number(process.env.LIMIT_SERVICES) * (page - 1) },
+				{ $limit: Number(process.env.LIMIT_SERVICES) },
+				{
+					$project: {
+						_id: "$workerService._id",
+						workerService: 1,
+						service: 1,
+					},
+				},
+				{
+					$lookup: {
+						from: "User",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "workerUser",
+					},
+				},
+				{ $unwind: "$workerUser" },
+				{
+					$lookup: {
+						from: "Worker",
+						localField: "workerService.workerId",
+						foreignField: "_id",
+						as: "worker",
+					},
+				},
+				{ $unwind: "$worker" }
+			);
+		}
+
+		let [services, totalItems] = await Promise.all([
+			LocationModel.aggregate(pipeline),
+			LocationModel.aggregate(pipelineCount),
+		]);
+
+		if (totalItems.length) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
+		services = services.map((service) => {
+			if (service.price) return service;
+			let price = 0;
+			service.service.subCategories.forEach((val) => (price += val.price));
+			return { ...service, price };
+		});
+
+		const message = "Found services";
+		res.json(new Response(RESPONSE.SUCCESS, { message, services, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -102,7 +309,7 @@ const addService = async (req, res) => {
 		service.serviceProviderId = serviceProviderId;
 		service.serviceName = req.body.serviceName;
 		service.serviceCategory = req.body.serviceCategory;
-		service.subCategory = req.body.subCategory;
+		service.subCategories = req.body.subCategories;
 		service.description = req.body.description;
 
 		if (serviceProviderUser.role === ROLE.WORKER) {
@@ -115,8 +322,10 @@ const addService = async (req, res) => {
 			const workers = await WorkerModel.find({ shopkeeperId: serviceProviderId });
 			await Promise.all([
 				service.save(),
-				workers.map((worker) =>
-					new WorkerServiceModel({ workerId: worker._id, serviceId: _id }).save()
+				Promise.all(
+					workers.map((worker) =>
+						new WorkerServiceModel({ workerId: worker._id, serviceId: _id }).save()
+					)
 				),
 			]);
 		}
@@ -139,7 +348,7 @@ const updateService = async (req, res) => {
 
 		service.serviceName = req.body.serviceName;
 		service.serviceCategory = req.body.serviceCategory;
-		service.subCategory = req.body.subCategory;
+		service.subCategories = req.body.subCategories;
 		service.description = req.body.description;
 
 		await service.save();
@@ -165,7 +374,7 @@ const deleteService = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		if (serviceProviderUser.role == ROLE.WORKER) {
+		if (serviceProviderUser.role === ROLE.WORKER) {
 			await Promise.all([
 				service.delete(),
 				WorkerServiceModel.deleteOne({ workerId: serviceProviderId, serviceId }),
@@ -174,8 +383,10 @@ const deleteService = async (req, res) => {
 			const workers = await WorkerModel.find({ shopkeeperId: serviceProviderId });
 			await Promise.all([
 				service.delete(),
-				workers.map((worker) =>
-					WorkerServiceModel.deleteOne({ workerId: worker._id, serviceId })
+				Promise.all(
+					workers.map((worker) =>
+						WorkerServiceModel.deleteOne({ workerId: worker._id, serviceId })
+					)
 				),
 			]);
 		}
@@ -189,16 +400,23 @@ const deleteService = async (req, res) => {
 
 const bookService = async (req, res) => {
 	try {
-		const serviceId = req.params.serviceId;
+		const workerServiceId = req.params.workerServiceId;
 		const userId = req.body.userId;
-		const workerId = req.body.workerId;
 
-		const [service, user, workerUser, worker, workerService] = await Promise.all([
+		const workerService = await WorkerServiceModel.findById(workerServiceId);
+		if (!workerService) {
+			const message = "Worker service not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const workerId = workerService.workerId;
+		const serviceId = workerService.serviceId;
+
+		const [service, user, workerUser, worker] = await Promise.all([
 			ServiceModel.findById(serviceId),
 			UserModel.findById(userId),
 			UserModel.findById(workerId),
 			WorkerModel.findById(workerId),
-			WorkerServiceModel.findOne({ workerId, serviceId }),
 		]);
 
 		let message = null;
@@ -215,6 +433,7 @@ const bookService = async (req, res) => {
 		serviceOrder.serviceId = serviceId;
 		serviceOrder.price = req.body.price;
 		serviceOrder.metaData = req.body.metaData;
+		serviceOrder.serviceCategory = service.serviceCategory;
 
 		workerService.orderedCount++;
 		await Promise.all([serviceOrder.save(), workerService.save()]);
@@ -238,7 +457,9 @@ const bookService = async (req, res) => {
 module.exports = {
 	getService,
 	getWorkerServiceWithRatings,
+	getServiceCount,
 	getServices,
+	getWorkerServicesForStore,
 	addService,
 	updateService,
 	deleteService,

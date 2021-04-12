@@ -15,7 +15,7 @@ const useSharp = async (files) => {
 		await Promise.all(
 			files.map(async (file) =>
 				sharp(`${process.env.TEMP_UPLOADS}/${file}`)
-					.resize(500)
+					.resize((height = 500))
 					.toFile(`${process.env.UPLOADS}/${file}`)
 			)
 		);

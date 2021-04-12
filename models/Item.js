@@ -19,9 +19,7 @@ const ItemSchema = mongoose.Schema(
 ItemSchema.index({ price: 1 });
 ItemSchema.index({ orderedCount: -1 });
 ItemSchema.index({ ratingValue: -1 });
-ItemSchema.index({ itemName: 1, price: 1 });
-ItemSchema.index({ itemName: 1, orderedCount: -1 });
-ItemSchema.index({ itemName: 1, ratingValue: -1 });
+ItemSchema.index({ itemName: "text", description: "text" });
 
 const ItemModel = mongoose.model("Item", ItemSchema, "Item");
 ItemModel.ensureIndexes().catch((error) => console.log(error));

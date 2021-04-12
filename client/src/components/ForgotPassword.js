@@ -16,31 +16,22 @@ const onSubmit = async (values, setError, history, page) => {
 		const res = await Axios.POST("/otp/resetPassword", data);
 		data = res.data;
 
-		if (res.success === RESPONSE.SUCCESS) {
-			page.setPage(2);
-		} else {
-			setError(data.message);
-		}
+		if (res.success === RESPONSE.SUCCESS) page.setPage(2);
+		else setError(data.message);
 	} else if (page.page === 2) {
 		let data = { phone: values.phone, OTP: values.OTP };
-		const res = await Axios.DELETE("/otp/resetPassword", data);
+		const res = await Axios.PUT("/otp/resetPassword", data);
 		data = res.data;
 
-		if (res.success === RESPONSE.SUCCESS) {
-			page.setPage(3);
-		} else {
-			setError(data.message);
-		}
+		if (res.success === RESPONSE.SUCCESS) page.setPage(3);
+		else setError(data.message);
 	} else {
 		let data = { phone: values.phone, password: values.password };
 		const res = await Axios.POST("/user/resetPassword", data);
 		data = res.data;
 
-		if (res.success === RESPONSE.SUCCESS) {
-			history.push("/login");
-		} else {
-			setError(data.message);
-		}
+		if (res.success === RESPONSE.SUCCESS) history.push("/login");
+		else setError(data.message);
 	}
 };
 
@@ -63,97 +54,93 @@ function ForgotPassword(props) {
 	const [page, setPage] = useState(1);
 
 	return (
-		<>
-			<div className="card_container">
-				<h2 className="mb-10">Forgot Password</h2>
-				{error ? <ErrorText>{error}</ErrorText> : null}
-				<Formik
-					initialValues={initialValues}
-					validationSchema={validationSchema}
-					onSubmit={(values) => onSubmit(values, setError, history, { page, setPage })}
-				>
-					{(formik) => {
-						return (
-							<Form className="card">
-								{page === 1 && (
-									<>
-										<div className="form-control">
-											<label htmlFor="phone">Contact Number</label>
-											<Field
-												type="text"
-												id="phone"
-												name="phone"
-												validate={required}
-											/>
-											<ErrorMessage name="phone" component={ErrorText} />
-										</div>
-										<button type="submit" className="btn btn-success">
-											Send OTP
-										</button>
-									</>
-								)}
+		<div className="card_container">
+			<h2 className="mb-10">Forgot Password</h2>
+			{error ? <ErrorText>{error}</ErrorText> : null}
+			<Formik
+				initialValues={initialValues}
+				validationSchema={validationSchema}
+				onSubmit={(values) => onSubmit(values, setError, history, { page, setPage })}
+			>
+				{(formik) => {
+					return (
+						<Form className="card">
+							{page === 1 && (
+								<>
+									<div className="form-control">
+										<label htmlFor="phone">Contact Number</label>
+										<Field
+											type="text"
+											id="phone"
+											name="phone"
+											validate={required}
+										/>
+										<ErrorMessage name="phone" component={ErrorText} />
+									</div>
+									<button type="submit" className="btn btn-success">
+										Send OTP
+									</button>
+								</>
+							)}
 
-								{page === 2 && (
-									<>
-										<div className="form-control">
-											<label htmlFor="OTP">OTP</label>
-											<Field
-												type="text"
-												id="OTP"
-												name="OTP"
-												validate={required}
-											/>
-											<ErrorMessage name="OTP" component={ErrorText} />
-										</div>
-										<button type="submit" className="btn btn-success">
-											Verify OTP
-										</button>
-									</>
-								)}
+							{page === 2 && (
+								<>
+									<div className="form-control">
+										<label htmlFor="OTP">OTP</label>
+										<Field
+											type="text"
+											id="OTP"
+											name="OTP"
+											validate={required}
+										/>
+										<ErrorMessage name="OTP" component={ErrorText} />
+									</div>
+									<button type="submit" className="btn btn-success">
+										Verify OTP
+									</button>
+								</>
+							)}
 
-								{page === 3 && (
-									<>
-										<div className="form-control">
-											<label htmlFor="password">New Password</label>
-											<Field
-												type="password"
-												id="password"
-												name="password"
-												validate={required}
-											/>
-											<ErrorMessage name="password" component={ErrorText} />
-										</div>
+							{page === 3 && (
+								<>
+									<div className="form-control">
+										<label htmlFor="password">New Password</label>
+										<Field
+											type="password"
+											id="password"
+											name="password"
+											validate={required}
+										/>
+										<ErrorMessage name="password" component={ErrorText} />
+									</div>
 
-										<div className="form-control">
-											<label htmlFor="confirmPassword">
-												Confirm Password
-											</label>
-											<Field
-												type="password"
-												id="confirmPassword"
-												name="confirmPassword"
-												validate={required}
-											/>
-											<ErrorMessage
-												name="confirmPassword"
-												component={ErrorText}
-											/>
-										</div>
+									<div className="form-control">
+										<label htmlFor="confirmPassword">Confirm Password</label>
+										<Field
+											type="password"
+											id="confirmPassword"
+											name="confirmPassword"
+											validate={required}
+										/>
+										<ErrorMessage
+											name="confirmPassword"
+											component={ErrorText}
+										/>
+									</div>
 
-										<button type="submit" className="btn btn-success">
-											Change password
-										</button>
-									</>
-								)}
-							</Form>
-						);
-					}}
-				</Formik>
-				<p className="big-font-size mt-10 mb-10">
-					New to Clean Out ? <Link to="/register">Register</Link>
-				</p>
-			</div>
-		</>
+									<button type="submit" className="btn btn-success">
+										Change password
+									</button>
+								</>
+							)}
+						</Form>
+					);
+				}}
+			</Formik>
+			<p className="big-font-size mt-10 mb-10">
+				New to Clean Out ? <Link to="/register">Register</Link>
+			</p>
+		</div>
 	);
 }
 

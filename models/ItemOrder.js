@@ -15,7 +15,7 @@ const OrderSchema = mongoose.Schema(
 	{ versionKey: false }
 );
 
-const OrderModel = mongoose.model("ItemOrder", OrderSchema, "ItemOrders");
+const OrderModel = mongoose.model("ItemOrder", OrderSchema, "ItemOrder");
 OrderModel.ensureIndexes().catch((error) => console.log(error));
 
 module.exports = OrderModel;

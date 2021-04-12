@@ -4,13 +4,12 @@ import { connect } from "react-redux";
 import ErrorText from "./ErrorText";
 import { getDataForHome } from "../redux/actions";
 
-const cleaningCategory = (history, category, categories) => {
-	console.log("inside");
-	history.push("/cleaningCategory", { category, categories });
+const cleaningCategory = (history, category) => {
+	history.push("/store/services", { category });
 };
 
 const items = (history) => {
-	console.log("inside");
+	history.push("/store/items");
 };
 
 function Home(props) {
@@ -22,10 +21,9 @@ function Home(props) {
 	}, [history]);
 
 	return (
-		!auth.loading &&
-		!home.loading && (
-			<>
-				<div className="App">
+		<div className="App">
+			{!home.loading && (
+				<>
 					{error.error && <ErrorText>{error.error}</ErrorText>}
 					<div className="home_container">
 						<img className="home_image" src={"/images/Home.jpg"} alt="Home" />
@@ -42,8 +40,8 @@ function Home(props) {
 							{home.serviceCategories.map((category) => (
 								<div
 									key={category._id}
-									className="category_card"
-									onClick={() => cleaningCategory(history)}
+									className="category_card hover-pointer"
+									onClick={() => cleaningCategory(history, category.category)}
 								>
 									<img
 										src={`/images/${category.image}`}
@@ -63,7 +61,7 @@ function Home(props) {
 							{home.items.map((item) => (
 								<div
 									key={item._id}
-									className="category_card"
+									className="category_card hover-pointer"
 									onClick={() => items(history)}
 								>
 									<img
@@ -77,9 +75,9 @@ function Home(props) {
 							))}
 						</div>
 					</div>
-				</div>
-			</>
-		)
+				</>
+			)}
+		</div>
 	);
 }
 

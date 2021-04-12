@@ -1,32 +1,30 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
-	getOnlyShopkeeperById,
 	getShopkeeperById,
-	getShopkeeperByPhone,
+	getShopkeeperWithOrders,
 	getWorkers,
 	getRequestedOrders,
 	registerShopkeeper,
+	addWorker,
 	updateShopkeeper,
 	removeShopkeeper,
+	removeWorkerFromShop,
 } = require("../controllers/ShopkeeperController");
 
 /**
  * GET
  */
 // body -> {}
-// resp -> {success, message, shopkeeperUser, address, shopkeeper, serviceOrders, itemOrders}
-router.get("/shopkeeperOnly/:shopkeeperId", getOnlyShopkeeperById);
+// resp -> {success, message, shopkeeperUser, address, shopkeeper}
+router.get("/:shopkeeperId", getShopkeeperById);
 // body -> {}
 // resp -> {success, message, shopkeeperUser, address, shopkeeper, serviceOrders, itemOrders}
-router.get("/:shopkeeperId", getShopkeeperById);
-// body -> {phone}
-// resp -> {success, message, shopkeeperUser, address, shopkeeper}
-router.get("/phone", getShopkeeperByPhone);
-// body -> {lastKey}
+router.get("/withOrders/:shopkeeperId", getShopkeeperWithOrders);
+// body -> {q:lastKey}
 // resp -> {success, message, workers}
 router.get("/workers/:shopkeeperId", getWorkers);
-// body -> {lastKeyServiceOrder, lastKeyItemOrder}
+// body -> {q:lastKeyServiceOrder, q:lastKeyItemOrder}
 // resp -> {success, message, itemOrders, serviceOrders}
 router.get("/requestedOrders/:shopkeeperId", getRequestedOrders);
 
@@ -36,6 +34,9 @@ router.get("/requestedOrders/:shopkeeperId", getRequestedOrders);
 // body -> {userName, phone, password, role, society, area, pincode, city, state, shopName, proofs}
 // resp -> {success, message, id:shopkeeperId}
 router.post("", upload, registerShopkeeper);
+// body -> {phone}
+// resp -> {success, message}
+router.post("/addWorker/:shopkeeperId", addWorker);
 
 /**
  * PUT
@@ -50,5 +51,8 @@ router.put("/:shopkeeperId", upload, updateShopkeeper);
 // body -> {}
 // resp -> {success, message}
 router.delete("/:shopkeeperId", removeShopkeeper);
+// body -> {q:workerId}
+// resp -> {success, message}
+router.delete("/worker/:shopkeeperId", removeWorkerFromShop);
 
 module.exports = router;

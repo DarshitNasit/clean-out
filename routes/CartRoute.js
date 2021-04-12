@@ -16,14 +16,14 @@ router.get("/:userId", getCartItems);
 /**
  * POST
  */
-// body -> {price}
+// body -> {}
 // resp -> {success, message, id:itemOrderId}
 router.post("/placeOrder/:userId", placeOrder);
 
 /**
  * PUT
  */
-// body -> {cartItemPackId, value}
+// body -> {value}
 // resp -> {success, message, cartItemPack}
 router.put("/:cartItemPackId", changeCartItemCount);
 

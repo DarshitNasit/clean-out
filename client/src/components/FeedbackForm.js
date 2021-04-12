@@ -6,13 +6,14 @@ import { Axios, timeout } from "../utilities";
 import { RESPONSE } from "../enums";
 
 function FeedbackForm(props) {
-	const { auth, targetId } = props;
+	const { auth, targetId, target } = props;
 	const { setError } = props;
 	const [ratingId, setRatingId] = useState(null);
 	const [feedback, setFeedback] = useState(3);
 	const [description, setDescription] = useState("");
 	const [added, setAdded] = useState(false);
 	const [updated, setUpdated] = useState(false);
+	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
 		getPrevRating();
@@ -23,6 +24,7 @@ function FeedbackForm(props) {
 				setFeedback(res.data.rating.ratingValue);
 				setDescription(res.data.rating.description);
 			}
+			setLoading(false);
 		}
 	}, []);
 
@@ -50,7 +52,7 @@ function FeedbackForm(props) {
 			const res = await Axios.PUT(`/rating/${ratingId}`, {
 				ratingValue: feedback,
 				description,
-				target: "ITEM",
+				target,
 			});
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			setUpdated(true);
@@ -59,7 +61,7 @@ function FeedbackForm(props) {
 				targetId,
 				ratingValue: feedback,
 				description,
-				target: "ITEM",
+				target,
 			});
 
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
@@ -72,36 +74,43 @@ function FeedbackForm(props) {
 
 	return (
 		<div className={`feedback_form ${props.className}`}>
-			<p>Feedback</p>
-			<div className="feedback_form_stars">
-				{[...Array(5)].map((val, index) => (
-					<div key={index}>
-						<input type="radio" name="feedback" />
-						<label onClick={() => setFeedback(index + 1)}>
-							{feedback >= index + 1 ? (
-								<StarIcon className="violet mr-20" transform="scale(2)" />
-							) : (
-								<StarBorderIcon className="violet mr-20" transform="scale(2)" />
-							)}
-						</label>
+			{!loading && (
+				<>
+					<p>Feedback</p>
+					<div className="feedback_form_stars">
+						{[...Array(5)].map((val, index) => (
+							<div key={index}>
+								<input type="radio" name="feedback" />
+								<label onClick={() => setFeedback(index + 1)}>
+									{feedback >= index + 1 ? (
+										<StarIcon className="violet mr-20" transform="scale(2)" />
+									) : (
+										<StarBorderIcon
+											className="violet mr-20"
+											transform="scale(2)"
+										/>
+									)}
+								</label>
+							</div>
+						))}
 					</div>
-				))}
-			</div>
-			<div className="feedback_form_description">
-				<textarea
-					className="mt-20"
-					value={description}
-					onChange={handleChange}
-					placeholder="Write something..."
-				/>
-				<EjectRoundedIcon
-					transform="scale(2) rotate(90)"
-					className="ml-10 mt-20 violet"
-					onClick={handleSubmit}
-				/>
-			</div>
-			{added && <p>Added feedback</p>}
-			{updated && <p>Updated feedback</p>}
+					<div className="feedback_form_description">
+						<textarea
+							className="mt-20"
+							value={description}
+							onChange={handleChange}
+							placeholder="Write something..."
+						/>
+						<EjectRoundedIcon
+							transform="scale(2) rotate(90)"
+							className="ml-10 mt-20 violet hover-pointer"
+							onClick={handleSubmit}
+						/>
+					</div>
+					{added && <p>Added feedback</p>}
+					{updated && <p>Updated feedback</p>}
+				</>
+			)}
 		</div>
 	);
 }

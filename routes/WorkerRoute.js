@@ -1,27 +1,29 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
-	getOnlyWorkerById,
 	getWorkerById,
-	getWorkerByPhone,
+	getWorkerWithOrders,
 	getRequestedOrders,
+	getShopkeeperRequest,
 	registerWorker,
+	setShopkeeperResponse,
 	updateWorker,
 	removeWorker,
+	leaveShop,
 } = require("../controllers/WorkerController");
 
 /**
  * GET
  */
 // body -> {}
-// resp -> {success, message, workerUser}
-router.get("/workerOnly/:workerId", getOnlyWorkerById);
-// body -> {}
-// resp -> {success, message, workerUser, address, worker, serviceOrders, itemOrders}
+// resp -> {success, message, workerUser, address, worker:{worker, pincodes}}
 router.get("/:workerId", getWorkerById);
-// body -> {phone}
-// resp -> {success, message, workerUser, address, worker}
-router.get("/phone", getWorkerByPhone);
+// body -> {}
+// resp -> {success, message, request}
+router.get("/shopkeeperRequest/:workerId", getShopkeeperRequest);
+// body -> {}
+// resp -> {success, message, workerUser, address, worker, shopkeeperUser?, serviceOrders, itemOrders}
+router.get("/withOrders/:workerId", getWorkerWithOrders);
 // body -> {lastKey}
 // resp -> {success, message, serviceOrders}
 router.get("/requestedOrders/:workerId", getRequestedOrders);
@@ -32,6 +34,9 @@ router.get("/requestedOrders/:workerId", getRequestedOrders);
 // body -> {userName, phone, password, role, society, area, pincode, city, state, profilePicture, proofs, pincodes}
 // resp -> {success, message, id:workerId}
 router.post("", upload, registerWorker);
+// body -> {response}
+// resp -> {success, message, id:workerId}
+router.post("/shopkeeperResponse/:workerId", setShopkeeperResponse);
 
 /**
  * PUT
@@ -46,5 +51,8 @@ router.put("/:workerId", upload, updateWorker);
 // body -> {}
 // resp -> {success, message}
 router.delete("/:workerId", removeWorker);
+// body -> {}
+// resp -> {success, message}
+router.delete("/leaveShop/:workerId", leaveShop);
 
 module.exports = router;

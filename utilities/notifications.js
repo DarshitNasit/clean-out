@@ -18,16 +18,19 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendNotifications = async (message, targets, purpose) => {
-	const mailOptions = {
-		from: process.env.EMAIL_ACCOUNT,
-		to: arrayToString(targets),
-		subject: `${purpose} - Clean Out`,
-		html: `<h3>${message}</h3>`,
-	};
+	console.log("message", message);
+	console.log("targets", targets);
+	console.log("purpose", purpose);
+	// const mailOptions = {
+	// 	from: process.env.EMAIL_ACCOUNT,
+	// 	to: arrayToString(targets),
+	// 	subject: `${purpose} - Clean Out`,
+	// 	html: `<h3>${message}</h3>`,
+	// };
 
-	transporter.sendMail(mailOptions, (error, info) => {
-		if (error) handleError(error);
-	});
+	// transporter.sendMail(mailOptions, (error, info) => {
+	// 	if (error) handleError(error);
+	// });
 };
 
 module.exports = { getOtp, sendNotifications };
