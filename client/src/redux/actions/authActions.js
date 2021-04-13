@@ -45,7 +45,7 @@ function logoutUser(history) {
 	};
 }
 
-function setUserFromStorage(store) {
+async function setUserFromStorage(store) {
 	store.dispatch(userLoading());
 	const token = localStorage.getItem("token");
 	if (token) {
@@ -55,7 +55,9 @@ function setUserFromStorage(store) {
 			store.dispatch(setUser({}));
 			localStorage.removeItem("token");
 		} else {
-			store.dispatch(setUser(decodedToken));
+			// const res = await Axios.GET(`/jwt/refreshToken`, { token });
+			// store.dispatch(setUser(jwt_decode(res.data.newToken)));
+			store.dispatch(setUser(jwt_decode(token)));
 		}
 	} else {
 		store.dispatch(setUser({}));

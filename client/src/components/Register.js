@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field, FieldArray, ErrorMessage } from "formik";
 import { connect } from "react-redux";
 import * as Yup from "yup";
 
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
 import { ROLE, RESPONSE } from "../enums";
-import { Axios, buildFormData } from "../utilities";
+import { Axios, arrayToString, buildFormData } from "../utilities";
 import { setError } from "../redux/actions";
 
 const initialValues = {
@@ -20,7 +20,7 @@ const initialValues = {
 	city: "",
 	state: "",
 	role: "USER",
-	pincodes: "",
+	pincodes: [""],
 	shopName: "",
 };
 
@@ -32,13 +32,13 @@ const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 	let res, data;
 	if (values.role === ROLE.USER) res = await Axios.POST(`/${resource}`, values);
 	else {
-		data = { ...values, profilePicture, proofs };
+		data = { ...values, pincodes: arrayToString(values.pincodes), profilePicture, proofs };
 		const { formData, headers } = buildFormData(data);
 		res = await Axios.POST(`/${resource}`, formData, headers);
 	}
 
 	data = res.data;
-	if (res.success === RESPONSE.SUCCESS) history.push("/login");
+	if (res.success === RESPONSE.SUCCESS) history.goBack();
 	else setError(data.message);
 };
 
@@ -54,11 +54,19 @@ const validationSchema = Yup.object({
 		.oneOf([Yup.ref("password"), null], "Passwords must match"),
 	society: Yup.string().required("Required"),
 	area: Yup.string().required("Required"),
-	pincode: Yup.string().required("Required").length(6, "Invalid pincode"),
+	pincode: Yup.string().min(6, "Invalid pincode").required("Required"),
 	city: Yup.string().required("Required"),
 	state: Yup.string().required("Required"),
 	role: Yup.string().required("Required"),
-	pincodes: Yup.string(),
+	pincodes: Yup.array()
+		.of(
+			Yup.number()
+				.min(100000, "Invalid pincode")
+				.max(999999, "Invalid pincode")
+				.required("Required")
+				.typeError("Invalid pincode")
+		)
+		.min(1, "At least one pincode is required"),
 	shopName: Yup.string(),
 });
 
@@ -77,7 +85,8 @@ function Register(props) {
 	const [proofsError, setProofsError] = useState(null);
 
 	useEffect(() => {
-		if (auth.isAuthenticated) history.goBack();
+		if (auth.isAuthenticated && ![ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role))
+			history.goBack();
 	}, []);
 
 	useEffect(() => {
@@ -229,17 +238,68 @@ function Register(props) {
 
 							{formik.values.role === ROLE.WORKER && (
 								<div className="form-control">
-									<label htmlFor="pincodes">
-										Pincodes of preferred locations
-									</label>
-									<Field
-										type="text"
-										id="pincodes"
-										name="pincodes"
-										placeholder="Comma separated values"
-										validate={required}
-									/>
-									<ErrorMessage name="pincodes" component={ErrorText} />
+									<label>Pincodes of preferred locations</label>
+									<FieldArray name="pincodes">
+										{(fieldArrayProps) => {
+											const { push, remove, form } = fieldArrayProps;
+											const { pincodes } = form.values;
+											console.log(pincodes);
+
+											return (
+												<div className="flex flex-col">
+													{pincodes.map((pincode, index) => {
+														return (
+															<div
+																key={index}
+																className="flex flex-row align-center mt-5 mb-5 br-10"
+															>
+																<Field
+																	name={`pincodes[${index}]`}
+																	style={{
+																		width: "40%",
+																		border: "none",
+																		backgroundColor:
+																			"var(--main_theme)",
+																		height: "2rem",
+																		fontSize: "1.1rem",
+																		marginRight: "10px",
+																		borderRadius: "5px",
+																		paddingLeft: "5px",
+																	}}
+																/>
+																<button
+																	type="button"
+																	className="btn-white pl-10 pr-10 mr-5"
+																	style={{
+																		border: "1px solid black",
+																	}}
+																	hidden={pincodes.length === 1}
+																	onClick={() => remove(index)}
+																>
+																	-
+																</button>
+																<button
+																	type="button"
+																	className="btn-white pl-10 pr-10 mr-10"
+																	style={{
+																		border: "1px solid black",
+																	}}
+																	onClick={() => push("")}
+																>
+																	+
+																</button>
+
+																<ErrorMessage
+																	name={`pincodes[${index}]`}
+																	component={ErrorText}
+																/>
+															</div>
+														);
+													})}
+												</div>
+											);
+										}}
+									</FieldArray>
 								</div>
 							)}
 
@@ -263,8 +323,7 @@ function Register(props) {
 										!formik.dirty ||
 										!formik.isValid ||
 										formik.isSubmitting ||
-										(formik.values.role === ROLE.WORKER &&
-											(!profilePicture || !formik.values.pincodes.length)) ||
+										(formik.values.role === ROLE.WORKER && !profilePicture) ||
 										(formik.values.role === ROLE.SHOPKEEPER &&
 											!formik.values.shopName) ||
 										(formik.values.role !== ROLE.USER && !proofs.length)

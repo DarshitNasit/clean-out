@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 import StarIcon from "@material-ui/icons/Star";
 
+import Name from "./Name";
 import ErrorText from "./ErrorText";
 import Pagination from "./Pagination";
 import ViewServiceBar from "./ViewServiceBar";
@@ -12,7 +13,9 @@ import { setError, getDataForHome } from "../redux/actions";
 function ServiceStore(props) {
 	const { history, location, auth, home, error } = props;
 	const { setError, getDataForHome } = props;
-	const { category } = location.state;
+
+	let category;
+	if (location.state && location.state.category) category = location.state.category;
 
 	const [page, setPage] = useState(1);
 	const [services, setServices] = useState([]);
@@ -208,11 +211,21 @@ function ServiceStore(props) {
 
 					<div className="flex flex-col align-center">
 						{services.map((value) => {
-							const { workerService, service, workerUser, worker, price } = value;
+							const {
+								workerService,
+								service,
+								workerUser,
+								worker,
+								shopkeeper,
+								price,
+							} = value;
 							return (
 								<div
 									key={value._id}
-									className="flex flex-row btn-white br-10 pl-10 width100 mt-10 mb-10"
+									className="flex flex-row btn-white br-10 pl-10 width100 mt-10 mb-10 hover-pointer"
+									onClick={() =>
+										history.push(`/viewWorkerService/${workerService._id}`)
+									}
 								>
 									<div className="flex flex-row width70">
 										<div className="flex">
@@ -227,6 +240,7 @@ function ServiceStore(props) {
 										<ViewServiceBar
 											serviceName={service.serviceName}
 											serviceCategory={service.serviceCategory}
+											description={service.description}
 											subCategories={parseSubCategoryNames(
 												service.subCategories
 											)}
@@ -236,7 +250,18 @@ function ServiceStore(props) {
 									</div>
 
 									<div className="flex flex-col align-center width30 pt-10 pb-10">
-										<p className="big-font-size">{workerUser.userName}</p>
+										<Name
+											isVerified={worker.isVerified}
+											className="big-font-size"
+										>
+											{workerUser.userName}
+										</Name>
+
+										{shopkeeper && (
+											<Name isVerified={shopkeeper.isVerified} className="">
+												{shopkeeper.shopName}
+											</Name>
+										)}
 										<div className="flex flex-row align-center">
 											<p>{workerService.ratingValue}</p>
 											<StarIcon className="violet" />
@@ -253,7 +278,7 @@ function ServiceStore(props) {
 
 					{services.length ? (
 						<Pagination
-							itemsPerPage="1"
+							itemsPerPage="10"
 							totalItems={totalItems}
 							currentPage={page}
 							onPageChange={getServices}

@@ -35,6 +35,7 @@ function ItemStore(props) {
 		const res = await Axios.GET(`/item/store`, { sortBy, search, page: pageNumber });
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 
+		console.log(res.data.items);
 		setTotalItems(res.data.totalItems);
 		setItems(res.data.items);
 		setPage(pageNumber);
@@ -128,6 +129,7 @@ function ItemStore(props) {
 									item={item}
 									onClick={() => viewItem(itemId)}
 									className="hover-pointer p-10"
+									shopName={item.shopkeeper.shopName}
 								/>
 							);
 						})}

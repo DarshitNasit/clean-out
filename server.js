@@ -22,7 +22,7 @@ const app = express();
 connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(process.env.PUBLIC_FOLDER));
+app.use(express.static("public"));
 app.use("/images", express.static("public/uploads"));
 
 /**
@@ -51,13 +51,19 @@ app.use(require("./routes"));
 /**
  * Verifying folders
  */
-if (!fs.existsSync(process.env.UPLOADS)) fs.mkdirSync(process.env.UPLOADS);
-if (!fs.existsSync(process.env.TEMP_UPLOADS)) fs.mkdirSync(process.env.TEMP_UPLOADS);
+if (!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads");
+if (!fs.existsSync("public/tempUploads")) fs.mkdirSync("public/tempUploads");
 
 /**
  * Load necessary data
  */
 // require("./database/LoadServiceCategory")();
+require("./database/Admin")();
+
+/**
+ * Start cron jobs
+ */
+require("./utilities/cronJobs")();
 
 /**
  * Listen requests

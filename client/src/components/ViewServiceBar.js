@@ -5,6 +5,7 @@ function ViewServiceBar(props) {
 		serviceName,
 		serviceCategory,
 		subCategories,
+		description,
 		price,
 		workerName,
 		status,
@@ -21,7 +22,9 @@ function ViewServiceBar(props) {
 				{workerName && <p className="ml-auto">{workerName}</p>}
 			</div>
 
-			<p className="small-font-size">{subCategories}</p>
+			<p className="small-font-size">Sub Categories : {subCategories}</p>
+
+			{description && <p className="small-font-size">Description : {description}</p>}
 
 			<div className="flex flex-row mt-auto">
 				{price && <p className="">Price : {price}</p>}

@@ -13,6 +13,7 @@ const OrderSchema = mongoose.Schema(
 			type: String,
 			required: true,
 			default: moment().format(process.env.DATE_FORMAT),
+			index: true,
 		},
 		deliveredDate: { type: String, default: null },
 		price: { type: Number, required: true },

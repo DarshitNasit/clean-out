@@ -91,57 +91,35 @@ const getItemsForStore = async (req, res) => {
 
 		const pipeline = [{ $match: query }, { $sort: sort }];
 		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+
 		pipeline.push(
 			{ $skip: Number(process.env.LIMIT_ITEMS) * (page - 1) },
-			{ $limit: Number(process.env.LIMIT_ITEMS) }
+			{ $limit: Number(process.env.LIMIT_ITEMS) },
+			{
+				$lookup: {
+					from: "Shopkeeper",
+					localField: "shopkeeperId",
+					foreignField: "_id",
+					as: "shopkeeper",
+				},
+			},
+			{ $unwind: "$shopkeeper" }
 		);
 
-		const [totalItems, items] = await Promise.all([
+		let [totalItems, items] = await Promise.all([
 			ItemModel.aggregate(pipelineCount),
 			ItemModel.aggregate(pipeline),
 		]);
+
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Items found";
-		res.json(
-			new Response(RESPONSE.SUCCESS, { message, items, totalItems: totalItems[0].totalItems })
-		);
+		res.json(new Response(RESPONSE.SUCCESS, { message, items, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}
 };
-
-// const getItemsForStore = async (req, res) => {
-// 	try {
-// 		const search = req.query.search || null;
-// 		const sortBy = req.query.sortBy || null;
-// 		const lastKey = req.query.lastKey || null;
-
-// 		const query = {};
-// 		if (search) {
-// 			const pattern = `\w*${search}\w*`;
-// 			query.$or = [{ $text: { $search: search } }, { itemName: new RegExp(pattern, "i") }];
-// 		}
-
-// 		const sort = {};
-// 		sort[sortBy] = sortBy === "price" ? 1 : -1;
-// 		// if (search) sort.score = { $meta: "textScore" };
-
-// 		const pipeline = [
-// 			{ $match: query },
-// 			{ $sort: sort },
-// 			{ $limit: Number(process.env.LIMIT_ITEMS) },
-// 		];
-// 		if (lastKey)
-// 			pipeline.splice(2, 0, { $match: { _id: { $gt: mongoose.Types.ObjectId(lastKey) } } });
-
-// 		console.log(pipeline);
-// 		const items = await ItemModel.aggregate(pipeline);
-// 		console.log(items);
-// 		const message = "Items found";
-// 		res.json(new Response(RESPONSE.SUCCESS, { message, items }));
-// 	} catch (error) {
-// 		handleError(error);
-// 	}
-// };
 
 const addItem = async (req, res) => {
 	try {

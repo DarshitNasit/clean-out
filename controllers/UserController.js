@@ -105,7 +105,7 @@ const getUserWithOrders = async (req, res) => {
 
 const getUserByPhone = async (req, res) => {
 	try {
-		const phone = req.body.phone;
+		const phone = req.query.phone;
 		const user = await UserModel.findOne({ phone });
 		if (!user) {
 			const message = "User not found";

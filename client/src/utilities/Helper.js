@@ -1,5 +1,17 @@
 import axios from "axios";
-export { buildFormData, dataURLtoFile, isEmptyObject, setAuthToken, timeout };
+export {
+	arrayToString,
+	buildFormData,
+	dataURLtoFile,
+	isEmptyObject,
+	setAuthToken,
+	stringToArray,
+	timeout,
+};
+
+function arrayToString(array) {
+	return array.join(", ");
+}
 
 function buildFormData(data) {
 	const keys = Object.keys(data);
@@ -39,6 +51,11 @@ function setAuthToken(token) {
 	} else {
 		delete axios.defaults.headers.common["Authorization"];
 	}
+}
+
+function stringToArray(string) {
+	string = string.split(",");
+	return string.map((str) => str.trim());
 }
 
 async function timeout(seconds) {

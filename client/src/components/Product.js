@@ -3,7 +3,7 @@ import StarIcon from "@material-ui/icons/Star";
 
 function Product(props) {
 	const { itemName, itemImage, price, ratingValue, orderedCount, isAvailable } = props.item;
-	const { className, ...rest } = props;
+	const { shopName, className, ...rest } = props;
 
 	return (
 		<div className={`flex flex-col align-center ${className}`} {...rest}>
@@ -15,6 +15,7 @@ function Product(props) {
 				<p>{ratingValue}</p>
 				<StarIcon className="violet" />
 			</div>
+			{shopName && <p>From : {shopName}</p>}
 			{orderedCount !== null && <p>Ordered : {orderedCount}</p>}
 		</div>
 	);

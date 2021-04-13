@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 
-import Name from "./Name";
-import ErrorText from "./ErrorText";
-import ViewItemBar from "./ViewItemBar";
-import ViewServiceBar from "./ViewServiceBar";
-import { setError, logoutUser } from "../redux/actions";
-import { Axios } from "../utilities";
-import { RESPONSE, ROLE } from "../enums";
+import Name from "../Name";
+import ErrorText from "../ErrorText";
+import ViewItemBar from "../ViewItemBar";
+import ViewServiceBar from "../ViewServiceBar";
+import { setError, logoutUser } from "../../redux/actions";
+import { Axios } from "../../utilities";
+import { RESPONSE, ROLE } from "../../enums";
 
 function ViewProfile(props) {
-	const { history, location, auth, error } = props;
-	const { setError, logoutUser } = props;
+	const { history, location, error } = props;
+	const { setError } = props;
 
+	const [tempUser, setTempUser] = useState(null);
 	const [user, setUser] = useState(null);
 	const [address, setAddress] = useState(null);
 	const [worker, setWorker] = useState(null);
@@ -23,74 +24,86 @@ function ViewProfile(props) {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		getUserWithOrders();
-		async function getUserWithOrders() {
-			if (auth.user.role === ROLE.WORKER) {
-				const res = await Axios.GET(`/worker/withOrders/${auth.user._id}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					setUser(res.data.workerUser);
-					setAddress(res.data.address);
-					setWorker(res.data.worker);
-					setItemOrders(res.data.itemOrders);
-					setServiceOrders(res.data.serviceOrders);
-					if (res.data.worker.isDependent === "true")
-						setWorkerShopkeeper(res.data.shopkeeperUser);
-					setLoading(false);
-				}
-			} else if (auth.user.role === ROLE.SHOPKEEPER) {
-				const res = await Axios.GET(`/shopkeeper/withOrders/${auth.user._id}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					setUser(res.data.shopkeeperUser);
-					setAddress(res.data.address);
-					setShopkeeper(res.data.shopkeeper);
-					setItemOrders(res.data.itemOrders);
-					setServiceOrders(res.data.serviceOrders);
-					setLoading(false);
-				}
-			} else {
-				const res = await Axios.GET(`/user/withOrders/${auth.user._id}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					setUser(res.data.user);
-					setAddress(res.data.address);
-					setItemOrders(res.data.itemOrders);
-					setServiceOrders(res.data.serviceOrders);
-					setLoading(false);
-				}
-			}
-		}
-
+		// if (state && state.tempUser) setTempUser(state.tempUser);
+		// else history.goBack();
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
+	useEffect(() => {
+		if (tempUser) getUserWithOrders();
+	}, [tempUser]);
+
+	// async function getUser() {
+	// 	if (!phone) history.goBack();
+	// 	const res = await Axios.GET(`/user/phone`, { phone });
+	// 	if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+	// 	setTempUser(res.data.user);
+	// }
+
+	async function getUserWithOrders() {
+		if (tempUser.role === ROLE.WORKER) {
+			const res = await Axios.GET(`/worker/withOrders/${tempUser._id}`);
+			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+			else {
+				setUser(res.data.workerUser);
+				setAddress(res.data.address);
+				setWorker(res.data.worker);
+				setItemOrders(res.data.itemOrders);
+				setServiceOrders(res.data.serviceOrders);
+				if (res.data.worker.isDependent === "true")
+					setWorkerShopkeeper(res.data.shopkeeperUser);
+				setLoading(false);
+			}
+		} else if (tempUser.role === ROLE.SHOPKEEPER) {
+			const res = await Axios.GET(`/shopkeeper/withOrders/${tempUser._id}`);
+			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+			else {
+				setUser(res.data.shopkeeperUser);
+				setAddress(res.data.address);
+				setShopkeeper(res.data.shopkeeper);
+				setItemOrders(res.data.itemOrders);
+				setServiceOrders(res.data.serviceOrders);
+				setLoading(false);
+			}
+		} else {
+			const res = await Axios.GET(`/user/withOrders/${tempUser._id}`);
+			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+			else {
+				setUser(res.data.user);
+				setAddress(res.data.address);
+				setItemOrders(res.data.itemOrders);
+				setServiceOrders(res.data.serviceOrders);
+				setLoading(false);
+			}
+		}
+	}
+
 	function editProfile() {
 		setError("");
-		history.push("/updateProfile");
+		history.push("/admin/updateProfile", { tempUser });
 	}
 
 	async function deleteProfile() {
 		setError("");
-		if (auth.user.role === ROLE.WORKER) {
-			const res = await Axios.DELETE(`/worker/${auth.user._id}`);
+		if (tempUser.role === ROLE.WORKER) {
+			const res = await Axios.DELETE(`/worker/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-			else logoutUser(history);
-		} else if (auth.user.role === ROLE.SHOPKEEPER) {
-			const res = await Axios.DELETE(`/shopkeeper/${auth.user._id}`);
+			else history.goBack();
+		} else if (tempUser.role === ROLE.SHOPKEEPER) {
+			const res = await Axios.DELETE(`/shopkeeper/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-			else logoutUser(history);
+			else history.goBack();
 		} else {
-			const res = await Axios.DELETE(`/user/${auth.user._id}`);
+			const res = await Axios.DELETE(`/user/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-			else logoutUser(history);
+			else history.goBack();
 		}
 	}
 
 	async function leaveShop() {
-		const res = await Axios.DELETE(`/worker/leaveShop/${auth.user._id}`);
+		const res = await Axios.DELETE(`/worker/leaveShop/${tempUser._id}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		setWorker((prevWorker) => {
 			const newWorker = { ...prevWorker };
@@ -100,6 +113,8 @@ function ViewProfile(props) {
 		});
 		setWorkerShopkeeper(null);
 	}
+
+	async function verifyUser() {}
 
 	function parseSubCategoryNames(subCategories) {
 		let names = subCategories.map((subCategory) => subCategory.name);
@@ -138,11 +153,13 @@ function ViewProfile(props) {
 											<p>Preferred Locations : {worker.pincodes}</p>
 										</div>
 									)}
-									{worker && worker.isDependent === "true" && (
-										<p className="mt-10">
-											Shopkeeper : {workerShopkeeper.userName}
-										</p>
-									)}
+									{worker &&
+										worker.isDependent === "true" &&
+										workerShopkeeper && (
+											<p className="mt-10">
+												Shopkeeper : {workerShopkeeper.userName}
+											</p>
+										)}
 								</div>
 
 								{worker && (
@@ -150,7 +167,7 @@ function ViewProfile(props) {
 										src={`/images/${worker.profilePicture}`}
 										className="mt-50 ml-auto"
 										height="160px"
-										alt={user.userName}
+										alt="profile picture"
 									/>
 								)}
 							</div>
@@ -174,13 +191,27 @@ function ViewProfile(props) {
 								<div className="flex flex-row">
 									{worker &&
 										worker.proofs.map((proof) => (
-											<img
+											<a
 												key={proof}
-												className="mt-10 mr-10"
-												src={`/images/${proof}`}
-												height="200px"
-												alt="Proof"
-											></img>
+												href={`/images/${proof}`}
+												target="_blank"
+											>
+												<img
+													height="250"
+													border="0"
+													align="center"
+													className="mt-10 mr-10"
+													src=""
+													alt="proof"
+												/>
+											</a>
+											// <img
+											// 	key={proof}
+											// 	className="mt-10 mr-10"
+											// 	src={`/images/${proof}`}
+											// 	height="200px"
+											// 	alt="Proof"
+											// ></img>
 										))}
 									{shopkeeper &&
 										shopkeeper.proofs.map((proof) => (
@@ -197,7 +228,9 @@ function ViewProfile(props) {
 									{shopkeeper && (
 										<button
 											className="btn btn-violet"
-											onClick={() => history.push("/viewAllItems")}
+											onClick={() =>
+												history.push("/admin/viewAllItems", { tempUser })
+											}
 										>
 											Items
 										</button>
@@ -205,7 +238,9 @@ function ViewProfile(props) {
 									{(shopkeeper || (worker && worker.isDependent !== "true")) && (
 										<button
 											className="btn btn-violet ml-10"
-											onClick={() => history.push("/viewAllServices")}
+											onClick={() =>
+												history.push("/admin/viewAllServices", { tempUser })
+											}
 										>
 											Services
 										</button>
@@ -213,9 +248,23 @@ function ViewProfile(props) {
 									{shopkeeper && (
 										<button
 											className="btn btn-violet ml-10"
-											onClick={() => history.push("/viewAllWorkers")}
+											onClick={() =>
+												history.push("/viewAllWorkers", { tempUser })
+											}
 										>
 											Workers
+										</button>
+									)}
+									{(shopkeeper || worker) && (
+										<button
+											className="btn btn-success ml-10"
+											onClick={verifyUser}
+											disabled={
+												(shopkeeper && shopkeeper.isVerified) ||
+												(worker && worker.isVerified)
+											}
+										>
+											Verified
 										</button>
 									)}
 								</div>
@@ -240,7 +289,8 @@ function ViewProfile(props) {
 									className="mt-10 btn-main hover-pointer"
 									onClick={() =>
 										history.push(
-											`/viewServiceOrder/${serviceOrder.serviceOrder._id}`
+											`/viewServiceOrder/${serviceOrder.serviceOrder._id}`,
+											{ tempUser }
 										)
 									}
 								/>
@@ -253,8 +303,12 @@ function ViewProfile(props) {
 									key={itemOrder.itemOrder._id}
 									orderItemPacks={itemOrder.orderItemPacks}
 									className="mt-10 btn-main hover-pointer"
-									onClick={() =>
-										history.push(`/viewItemOrder/${itemOrder.itemOrder._id}`)
+									onClick={
+										(() =>
+											history.push(
+												`/viewItemOrder/${itemOrder.itemOrder._id}`
+											),
+										{ tempUser })
 									}
 								/>
 							))}

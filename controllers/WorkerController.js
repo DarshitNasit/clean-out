@@ -47,28 +47,17 @@ const getWorkerWithShopkeeperById = async (workerId) => {
 const getWorkerById = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
-		const [workerUser, address, worker] = await Promise.all([
+		const [workerUser, address, worker, pincodes] = await Promise.all([
 			UserModel.findById(workerId),
 			AddressModel.findById(workerId),
 			WorkerModel.findById(workerId),
+			LocationModel.find({ workerId }),
 		]);
 		if (!workerUser || !worker || !address) {
 			const message = "Worker not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const pipeline = [
-			{ $match: { workerId: mongoose.Types.ObjectId(workerId) } },
-			{
-				$group: {
-					_id: "$workerId",
-					pincodes: { $push: "$pincode" },
-				},
-			},
-			{ $project: { _id: 0, pincodes: 1 } },
-		];
-
-		const pincodes = await LocationModel.aggregate(pipeline);
 		const message = "Worker found";
 		res.json(
 			new Response(RESPONSE.SUCCESS, {
@@ -77,7 +66,7 @@ const getWorkerById = async (req, res) => {
 				address,
 				worker: {
 					...worker._doc,
-					pincodes: arrayToString(pincodes[0].pincodes),
+					pincodes: arrayToString(pincodes.map((pincode) => pincode.pincode)),
 				},
 			})
 		);
@@ -89,11 +78,13 @@ const getWorkerById = async (req, res) => {
 const getWorkerWithOrders = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
-		const [workerUser, address, worker] = await Promise.all([
+		const [workerUser, address, worker, pincodes] = await Promise.all([
 			UserModel.findById(workerId),
 			AddressModel.findById(workerId),
 			WorkerModel.findById(workerId),
+			LocationModel.find({ workerId }),
 		]);
+
 		if (!workerUser || !worker) {
 			const message = "Worker not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
@@ -104,6 +95,7 @@ const getWorkerWithOrders = async (req, res) => {
 			shopkeeperUser = await UserModel.findById(worker.shopkeeperId);
 		}
 
+		worker._doc.pincodes = arrayToString(pincodes.map((pincode) => pincode.pincode));
 		const { serviceOrders, itemOrders } = await getOrders(workerId);
 		const message = "Found worker";
 		res.json(

@@ -3,7 +3,7 @@ const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 
 const storage = multer.diskStorage({
-	destination: process.env.TEMP_UPLOADS,
+	destination: "public/tempUploads",
 	filename: (req, file, cb) => cb(null, uuidv4() + path.extname(file.originalname)),
 });
 

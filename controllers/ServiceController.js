@@ -180,24 +180,6 @@ const getWorkerServicesForStore = async (req, res) => {
 				{ $unwind: "$workerService" },
 				{
 					$lookup: {
-						from: "User",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "workerUser",
-					},
-				},
-				{ $unwind: "$workerUser" },
-				{
-					$lookup: {
-						from: "Worker",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "worker",
-					},
-				},
-				{ $unwind: "$worker" },
-				{
-					$lookup: {
 						from: "Service",
 						localField: "workerService.serviceId",
 						foreignField: "_id",
@@ -218,25 +200,7 @@ const getWorkerServicesForStore = async (req, res) => {
 						workerService: 1,
 						service: 1,
 					},
-				},
-				{
-					$lookup: {
-						from: "User",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "workerUser",
-					},
-				},
-				{ $unwind: "$workerUser" },
-				{
-					$lookup: {
-						from: "Worker",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "worker",
-					},
-				},
-				{ $unwind: "$worker" }
+				}
 			);
 		} else if (sortBy === "orderedCount") {
 			pipeline.push({ $sort: { "workerService.orderedCount": -1 } });
@@ -250,34 +214,51 @@ const getWorkerServicesForStore = async (req, res) => {
 						workerService: 1,
 						service: 1,
 					},
-				},
-				{
-					$lookup: {
-						from: "User",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "workerUser",
-					},
-				},
-				{ $unwind: "$workerUser" },
-				{
-					$lookup: {
-						from: "Worker",
-						localField: "workerService.workerId",
-						foreignField: "_id",
-						as: "worker",
-					},
-				},
-				{ $unwind: "$worker" }
+				}
 			);
 		}
+
+		pipeline.push(
+			{
+				$lookup: {
+					from: "User",
+					localField: "workerService.workerId",
+					foreignField: "_id",
+					as: "workerUser",
+				},
+			},
+			{ $unwind: "$workerUser" },
+			{
+				$lookup: {
+					from: "Worker",
+					localField: "workerService.workerId",
+					foreignField: "_id",
+					as: "worker",
+				},
+			},
+			{ $unwind: "$worker" },
+			{
+				$lookup: {
+					from: "Shopkeeper",
+					localField: "worker.shopkeeperId",
+					foreignField: "_id",
+					as: "shopkeeper",
+				},
+			},
+			{
+				$unwind: {
+					path: "$shopkeeper",
+					preserveNullAndEmptyArrays: true,
+				},
+			}
+		);
 
 		let [services, totalItems] = await Promise.all([
 			LocationModel.aggregate(pipeline),
 			LocationModel.aggregate(pipelineCount),
 		]);
 
-		if (totalItems.length) totalItems = totalItems[0].totalItems;
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
 		else totalItems = 0;
 
 		services = services.map((service) => {

@@ -18,6 +18,7 @@ import AddWorker from "./components/AddWorker";
 import UpdateItem from "./components/UpdateItem";
 import AddService from "./components/AddService";
 import ViewWorker from "./components/ViewWorker";
+import AdminRoute from "./components/AdminRoute";
 import ViewService from "./components/ViewService";
 import ViewProfile from "./components/ViewProfile";
 import PrivateRoute from "./components/PrivateRoute";
@@ -32,6 +33,9 @@ import ViewAllServices from "./components/ViewAllServices";
 import ViewServiceOrder from "./components/ViewServiceOrder";
 import ViewWorkerService from "./components/ViewWorkerService";
 import ViewAllRequestedOrders from "./components/ViewAllRequestedOrders";
+
+import Admin from "./components/Admin/Admin";
+import AdminViewProfile from "./components/Admin/ViewProfile";
 
 import { setUserFromStorage } from "./redux/actions";
 
@@ -86,6 +90,12 @@ function App() {
 						component={UpdateService}
 					/>
 				</Switch>
+
+				<Switch>
+					<AdminRoute path="/admin" exact component={Admin} />
+					<AdminRoute path="/admin/viewProfile" exact component={AdminViewProfile} />
+				</Switch>
+
 				<Footer />
 			</Router>
 		</Provider>

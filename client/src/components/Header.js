@@ -75,6 +75,14 @@ function Header(props) {
 								</button>
 							</li>
 						)}
+
+					{auth.isAuthenticated && [ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role) && (
+						<li>
+							<button name="admin" className="white btn-black" onClick={handleClick}>
+								ADMIN
+							</button>
+						</li>
+					)}
 				</ul>
 			</div>
 
