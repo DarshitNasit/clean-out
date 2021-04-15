@@ -58,17 +58,25 @@ const getItemWithRatings = async (req, res) => {
 const getItems = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKey = req.query.lastKey || null;
+		const page = req.query.page;
 
-		const query = { shopkeeperId: mongoose.Types.ObjectId(shopkeeperId) };
-		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
-		const items = await ItemModel.aggregate([
-			{ $match: query },
-			{ $limit: Number(process.env.LIMIT_ITEMS) },
+		const pipeline = [{ $match: { shopkeeperId: mongoose.Types.ObjectId(shopkeeperId) } }];
+		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+		pipeline.push(
+			{ $skip: Number(process.env.LIMIT_ITEMS) * (page - 1) },
+			{ $limit: Number(process.env.LIMIT_ITEMS) }
+		);
+
+		let [items, totalItems] = await Promise.all([
+			ItemModel.aggregate(pipeline),
+			ItemModel.aggregate(pipelineCount),
 		]);
 
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Found services";
-		res.json(new Response(RESPONSE.SUCCESS, { message, items }));
+		res.json(new Response(RESPONSE.SUCCESS, { message, items, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -78,7 +86,7 @@ const getItemsForStore = async (req, res) => {
 	try {
 		const search = req.query.search || null;
 		const sortBy = req.query.sortBy || "price";
-		const page = req.query.page || 1;
+		const page = req.query.page;
 
 		const query = {};
 		const sort = {};

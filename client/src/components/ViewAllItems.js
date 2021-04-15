@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 
 import Product from "./Product";
 import ErrorText from "./ErrorText";
-import PaginationBar from "./PaginationBar";
+import Pagination from "./Pagination";
 import { setError } from "../redux/actions";
 import { RESPONSE, ROLE } from "../enums";
 import { Axios } from "../utilities";
@@ -12,86 +12,36 @@ function ViewAllItems(props) {
 	const { history, location, auth, error } = props;
 	const { setError } = props;
 
-	const [page, setPage] = useState(0);
-	const [lastKeys, setLastKeys] = useState([]);
+	const [page, setPage] = useState(1);
+	const [totalItems, setTotalItems] = useState(0);
 	const [items, setItems] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [previous, setPrevious] = useState(false);
-	const [next, setNext] = useState(false);
 
 	useEffect(() => {
 		getUser();
-		async function getUser() {
-			if (auth.user.role === ROLE.SHOPKEEPER) {
-				getItems();
-			} else history.goBack();
-		}
-
-		async function getItems() {
-			const res = await Axios.GET(`/item/items/${auth.user._id}`);
-			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-			if (res.data.items.length) {
-				setNext(true);
-				const array = res.data.items;
-				setItems(array);
-				setLastKeys([array[array.length - 1]._id]);
-			}
-			setLoading(false);
-		}
-
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
-	useEffect(() => {
-		setPrevious(!!page);
-	}, [page]);
+	async function getUser() {
+		if (auth.user.role === ROLE.SHOPKEEPER) getItems(1);
+		else history.goBack();
+	}
+
+	async function getItems(page) {
+		const res = await Axios.GET(`/item/items/${auth.user._id}`, { page });
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		setPage(page);
+		setTotalItems(res.data.totalItems);
+		setItems(res.data.items);
+		setLoading(false);
+	}
 
 	function addItem() {
 		setError("");
 		history.push("/addItem");
-	}
-
-	async function onPrevious() {
-		setError("");
-		let lastKey = null;
-		if (page >= 2) lastKey = lastKeys[page - 2];
-		const res = await Axios.GET(`/item/items/${auth.user._id}`, { lastKey });
-		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-
-		const array = res.data.items;
-		setItems(array);
-		setPage((prevPage) => {
-			setLastKeys((prevKeys) => {
-				const newKeys = [...prevKeys];
-				newKeys[prevPage - 1] = array[array.length - 1]._id;
-				return newKeys;
-			});
-			return prevPage - 1;
-		});
-		setNext(true);
-	}
-
-	async function onNext() {
-		setError("");
-		const lastKey = lastKeys[page];
-		if (!lastKey) return setNext(false);
-
-		const res = await Axios.GET(`/item/items/${auth.user._id}`, { lastKey });
-		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-		if (res.data.items.length) {
-			const array = res.data.items;
-			setItems(array);
-			setPage((prevPage) => {
-				setLastKeys((prevKeys) => {
-					const newKeys = [...prevKeys];
-					newKeys[prevPage + 1] = array[array.length - 1]._id;
-					return newKeys;
-				});
-				return prevPage + 1;
-			});
-		} else setNext(false);
 	}
 
 	return (
@@ -118,16 +68,15 @@ function ViewAllItems(props) {
 										/>
 									))}
 								</div>
-								{items.length ? (
-									<PaginationBar
+								{items.length > 0 && (
+									<Pagination
+										itemsPerPage="10"
+										totalItems={totalItems}
+										currentPage={page}
+										onPageChange={getItems}
+										cut={3}
 										className="mt-20 mb-50"
-										onPrevious={onPrevious}
-										disablePrevious={!previous}
-										onNext={onNext}
-										disableNext={!next}
 									/>
-								) : (
-									<p className="ml-auto mr-auto mt-50">No items found</p>
 								)}
 							</div>
 						</>

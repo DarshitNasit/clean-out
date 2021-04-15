@@ -1,27 +1,34 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 
-import ErrorText from "./ErrorText";
-import { setError } from "../redux/actions";
-import { ROLE, RESPONSE } from "../enums";
-import { Axios } from "../utilities";
+import ErrorText from "../ErrorText";
+import { setError } from "../../redux/actions";
+import { ROLE, RESPONSE } from "../../enums";
+import { Axios } from "../../utilities";
 
 function AddWorker(props) {
-	const { history, location, auth, error } = props;
+	const { history, location, match, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
 	const [phone, setPhone] = useState("");
 	const [submitting, setSubmitting] = useState(false);
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		if (auth.user.role === ROLE.SHOPKEEPER) setLoading(false);
-		else history.goBack();
-
+		if (!userId) return history.goBack();
+		getUser();
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
+
+	async function getUser() {
+		const res = await Axios.GET(`/user/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+		if (res.data.user.role !== ROLE.SHOPKEEPER) return history.goBack();
+		setLoading(false);
+	}
 
 	function handlePhoneChange(event) {
 		setError("");
@@ -39,7 +46,7 @@ function AddWorker(props) {
 		event.preventDefault();
 		setSubmitting(true);
 		setError("");
-		const res = await Axios.POST(`/shopkeeper/addWorker/${auth.user._id}`, { phone });
+		const res = await Axios.POST(`/shopkeeper/addWorker/${userId}`, { phone });
 		if (res.success === RESPONSE.FAILURE) {
 			setSubmitting(false);
 			setError(res.data.message);
@@ -78,7 +85,6 @@ function AddWorker(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		error: state.error,
 	};
 }

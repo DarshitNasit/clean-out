@@ -3,10 +3,10 @@ import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import { connect } from "react-redux";
 import * as Yup from "yup";
 
-import ErrorText from "./ErrorText";
-import { RESPONSE } from "../enums";
-import { Axios, isEmptyObject } from "../utilities";
-import { setError, getDataForHome } from "../redux/actions";
+import ErrorText from "../ErrorText";
+import { RESPONSE } from "../../enums";
+import { Axios, isEmptyObject } from "../../utilities";
+import { setError, getDataForHome } from "../../redux/actions";
 
 let initialValues = {};
 
@@ -55,7 +55,7 @@ const validationSchema = Yup.object({
 });
 
 function UpdateService(props) {
-	const { history, location, match, auth, error, home } = props;
+	const { history, location, match, error, home } = props;
 	const { setError, getDataForHome } = props;
 
 	const serviceId = match.params.serviceId;
@@ -77,8 +77,6 @@ function UpdateService(props) {
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 
 		const service = res.data.service;
-		if (service.serviceProviderId !== auth.user._id) return history.goBack();
-
 		initialValues.serviceName = service.serviceName;
 		initialValues.serviceCategory = service.serviceCategory;
 		initialValues.subCategories = service.subCategories;
@@ -244,7 +242,6 @@ function UpdateService(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		home: state.home,
 		error: state.error,
 	};

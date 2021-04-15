@@ -39,7 +39,7 @@ function Cart(props) {
 		setError("");
 		const res = await Axios.POST(`/cart/placeOrder/${auth.user._id}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-		history.push(`/viewOrder/${res.data.id}`);
+		history.push(`/viewItemOrder/${res.data.id}`);
 	}
 
 	async function clearCart() {

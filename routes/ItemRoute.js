@@ -27,8 +27,8 @@ router.get("/:itemId", getItem);
 // body -> {}
 // resp -> {success, message, item, ratings}
 router.get("/withRatings/:itemId", getItemWithRatings);
-// body -> {q:lastKey}
-// resp -> {success, message, items}
+// body -> {q:page}
+// resp -> {success, message, items, totalCount}
 router.get("/items/:shopkeeperId", getItems);
 
 /**

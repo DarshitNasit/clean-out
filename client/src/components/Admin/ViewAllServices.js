@@ -1,62 +1,60 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 
-import ErrorText from "./ErrorText";
-import ViewServiceBar from "./ViewServiceBar";
-import PaginationBar from "./PaginationBar";
-import { setError } from "../redux/actions";
-import { RESPONSE, ROLE } from "../enums";
-import { Axios } from "../utilities";
+import ErrorText from "../ErrorText";
+import ViewServiceBar from "../ViewServiceBar";
+import Pagination from "../Pagination";
+import { setError } from "../../redux/actions";
+import { RESPONSE, ROLE } from "../../enums";
+import { Axios } from "../../utilities";
 
 function ViewAllServices(props) {
-	const { history, location, auth, error } = props;
+	const { history, location, match, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
-	const [page, setPage] = useState(0);
-	const [lastKeys, setLastKeys] = useState([]);
+	const [page, setPage] = useState(1);
+	const [totalItems, setTotalItems] = useState(0);
 	const [services, setServices] = useState([]);
 	const [loading, setLoading] = useState(true);
-	const [previous, setPrevious] = useState(false);
-	const [next, setNext] = useState(false);
 
 	useEffect(() => {
+		if (!userId) return history.goBack();
 		getUser();
-		async function getUser() {
-			if (auth.user.role === ROLE.WORKER) {
-				const res = await Axios.GET(`/worker/${auth.user._id}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					if (res.data.worker.isDependent === "true") history.goBack();
-					else getServices();
-				}
-			} else if (auth.user.role === ROLE.SHOPKEEPER) getServices();
-			else history.goBack();
-		}
-
-		async function getServices() {
-			const res = await Axios.GET(`/service/services/${auth.user._id}`);
-			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-			if (res.data.services.length) {
-				setNext(true);
-				const array = res.data.services;
-				setServices(array);
-				setLastKeys([array[array.length - 1]._id]);
-			}
-			setLoading(false);
-		}
-
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
-	useEffect(() => {
-		setPrevious(!!page);
-	}, [page]);
+	async function getUser() {
+		let res = await Axios.GET(`/user/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		const user = res.data.user;
+		if (user.role === ROLE.WORKER) {
+			res = await Axios.GET(`/worker/${userId}`);
+			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+			else {
+				if (res.data.worker.isDependent === "true") history.goBack();
+				else getServices(1);
+			}
+		} else if (user.role === ROLE.SHOPKEEPER) getServices(1);
+		else history.goBack();
+	}
+
+	async function getServices(page) {
+		const res = await Axios.GET(`/service/services/${userId}`, { page });
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		setPage(page);
+		setServices(res.data.services);
+		setTotalItems(res.data.totalItems);
+		setLoading(false);
+	}
 
 	function addService() {
 		setError("");
-		history.push("/addService");
+		history.push(`/admin/addService/${userId}`);
 	}
 
 	function parseSubCategoryNames(subCategories) {
@@ -65,85 +63,45 @@ function ViewAllServices(props) {
 		return names.join(", ");
 	}
 
-	async function onPrevious() {
-		setError("");
-		let lastKey = null;
-		if (page >= 2) lastKey = lastKeys[page - 2];
-		const res = await Axios.GET(`/service/services/${auth.user._id}`, { lastKey });
-		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-
-		const array = res.data.services;
-		setServices(array);
-		setPage((prevPage) => {
-			setLastKeys((prevKeys) => {
-				const newKeys = [...prevKeys];
-				newKeys[prevPage - 1] = array[array.length - 1]._id;
-				return newKeys;
-			});
-			return prevPage - 1;
-		});
-		setNext(true);
-	}
-
-	async function onNext() {
-		setError("");
-		const lastKey = lastKeys[page];
-		if (!lastKey) return setNext(false);
-
-		const res = await Axios.GET(`/service/services/${auth.user._id}`, { lastKey });
-		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-		if (res.data.services.length) {
-			const array = res.data.services;
-			setServices(array);
-			setPage((prevPage) => {
-				setLastKeys((prevKeys) => {
-					const newKeys = [...prevKeys];
-					newKeys[prevPage + 1] = array[array.length - 1]._id;
-					return newKeys;
-				});
-				return prevPage + 1;
-			});
-		} else setNext(false);
-	}
-
 	return (
 		<div className="width100 flex flex-col btn-main min-h80">
 			{!loading && (
 				<>
 					{error.error && <ErrorText>{error.error}</ErrorText>}
 
-					<div className="width80 ml-auto mr-auto flex flex-col">
-						<div className="flex flex-row p-10 align-center">
+					<div className="width90 ml-auto mr-auto flex flex-col mt-20">
+						<div className="flex flex-row align-center">
 							<p className="bold large-font-size">Services</p>
 							<button className="btn btn-violet ml-auto" onClick={addService}>
 								Add Service
 							</button>
 						</div>
 
-						{services.length > 0 && (
-							<>
-								{services.map((service) => (
+						<div className="flex flex-row justify-around flex-wrap mt-10">
+							{services.length > 0 &&
+								services.map((service) => (
 									<ViewServiceBar
 										key={service._id}
 										serviceName={service.serviceName}
 										serviceCategory={service.serviceCategory}
+										description={service.description}
 										subCategories={parseSubCategoryNames(service.subCategories)}
-										className="btn-light mt-10 width100 hover-pointer"
-										onClick={() => history.push(`/viewService/${service._id}`)}
+										className="btn-light mt-20 width30 hover-pointer height-fit p-10 shadow"
+										onClick={() =>
+											history.push(`/admin/viewService/${service._id}`)
+										}
 									/>
 								))}
-								{services.length ? (
-									<PaginationBar
-										className="mt-20 mb-50"
-										onPrevious={onPrevious}
-										disablePrevious={!previous}
-										onNext={onNext}
-										disableNext={!next}
-									/>
-								) : (
-									<p className="ml-auto mr-auto mt-50">No services found</p>
-								)}
-							</>
+						</div>
+						{services.length > 0 && (
+							<Pagination
+								itemsPerPage="10"
+								totalItems={totalItems}
+								currentPage={page}
+								onPageChange={getServices}
+								cut={3}
+								className="mt-20 mb-50"
+							/>
 						)}
 						{!services.length && <p className="ml-auto mr-auto">No services found</p>}
 					</div>
@@ -155,7 +113,6 @@ function ViewAllServices(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		error: state.error,
 	};
 }

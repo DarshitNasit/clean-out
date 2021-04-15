@@ -189,7 +189,7 @@ textarea {
 	justify-content: center;
 	padding: 10px;
 	border: 1px solid black;
-	top: 50%;
+	top: 20vh;
 	left: calc(50% - calc(var(--canvas_width) / 2));
 	z-index: 1;
 	background-color: var(--light_gray);

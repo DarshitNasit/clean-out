@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 
 import Name from "./Name";
 import ErrorText from "./ErrorText";
-import { RESPONSE } from "../enums";
+import { RESPONSE, ROLE } from "../enums";
 import { Axios } from "../utilities";
 import { setError } from "../redux/actions";
 
@@ -25,7 +25,11 @@ function ViewWorker(props) {
 			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 
 			const data = res.data;
-			if (data.worker.shopkeeperId != auth.user._id) history.goBack();
+			if (
+				data.worker.shopkeeperId !== auth.user._id &&
+				![ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role)
+			)
+				history.goBack();
 			setWorkerUser(data.workerUser);
 			setAddress(data.address);
 			setWorker(data.worker);
@@ -38,6 +42,7 @@ function ViewWorker(props) {
 	}, [location.pathname]);
 
 	async function removeWorker() {
+		setError("");
 		const res = await Axios.DELETE(`/shopkeeper/worker/${auth.user._id}`, { workerId });
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		history.goBack();

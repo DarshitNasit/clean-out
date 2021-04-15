@@ -27,12 +27,20 @@ const initialValues = {
 const onSubmit = async (values, setError, history, profilePicture, proofs) => {
 	setError("");
 	const resource =
-		values.role === ROLE.USER ? "user" : values.role === ROLE.WORKER ? "worker" : "shopkeeper";
+		values.role === ROLE.WORKER
+			? "worker"
+			: values.role === ROLE.SHOPKEEPER
+			? "shopkeeper"
+			: "user";
 
 	let res, data;
 	if (values.role === ROLE.USER) res = await Axios.POST(`/${resource}`, values);
 	else {
-		data = { ...values, pincodes: arrayToString(values.pincodes), profilePicture, proofs };
+		data = { ...values, proofs };
+		if (values.role === ROLE.WORKER) {
+			data.profilePicture = profilePicture;
+			data.pincodes = arrayToString(values.pincodes);
+		}
 		const { formData, headers } = buildFormData(data);
 		res = await Axios.POST(`/${resource}`, formData, headers);
 	}
@@ -58,15 +66,12 @@ const validationSchema = Yup.object({
 	city: Yup.string().required("Required"),
 	state: Yup.string().required("Required"),
 	role: Yup.string().required("Required"),
-	pincodes: Yup.array()
-		.of(
-			Yup.number()
-				.min(100000, "Invalid pincode")
-				.max(999999, "Invalid pincode")
-				.required("Required")
-				.typeError("Invalid pincode")
-		)
-		.min(1, "At least one pincode is required"),
+	pincodes: Yup.array().of(
+		Yup.number()
+			.min(100000, "Invalid pincode")
+			.max(999999, "Invalid pincode")
+			.typeError("Invalid pincode")
+	),
 	shopName: Yup.string(),
 });
 
@@ -266,6 +271,7 @@ function Register(props) {
 																		borderRadius: "5px",
 																		paddingLeft: "5px",
 																	}}
+																	validate={required}
 																/>
 																<button
 																	type="button"
@@ -323,10 +329,13 @@ function Register(props) {
 										!formik.dirty ||
 										!formik.isValid ||
 										formik.isSubmitting ||
-										(formik.values.role === ROLE.WORKER && !profilePicture) ||
+										(formik.values.role === ROLE.WORKER &&
+											(!profilePicture || !formik.values.pincodes.length)) ||
 										(formik.values.role === ROLE.SHOPKEEPER &&
 											!formik.values.shopName) ||
-										(formik.values.role !== ROLE.USER && !proofs.length)
+										(formik.values.role !== ROLE.USER &&
+											proofs &&
+											!proofs.length)
 									)
 								}
 								className="btn btn-success mt-10"

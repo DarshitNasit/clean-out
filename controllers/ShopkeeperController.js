@@ -69,13 +69,15 @@ const getShopkeeperWithOrders = async (req, res) => {
 const getWorkers = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKey = req.query.lastKey || null;
+		const page = req.query.page;
 		const ObjectId = mongoose.Types.ObjectId;
 
-		const query = { shopkeeperId: ObjectId(shopkeeperId), isDependent: "true" };
-		if (lastKey) query._id = { $gt: ObjectId(lastKey) };
-		const workers = await WorkerModel.aggregate([
-			{ $match: query },
+		const pipeline = [
+			{ $match: { shopkeeperId: ObjectId(shopkeeperId), isDependent: "true" } },
+		];
+		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+		pipeline.push(
+			{ $skip: Number(process.env.LIMIT_WORKERS) * (page - 1) },
 			{ $limit: Number(process.env.LIMIT_WORKERS) },
 			{
 				$lookup: {
@@ -99,21 +101,157 @@ const getWorkers = async (req, res) => {
 						proofs: "$proofs",
 					},
 				},
-			},
+			}
+		);
+
+		let [workers, totalItems] = await Promise.all([
+			WorkerModel.aggregate(pipeline),
+			WorkerModel.aggregate(pipelineCount),
 		]);
 
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Found workers";
-		res.json(new Response(RESPONSE.SUCCESS, { message, workers }));
+		res.json(new Response(RESPONSE.SUCCESS, { message, workers, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}
 };
 
+// const getRequestedOrders = async (req, res) => {
+// 	try {
+// 		const shopkeeperId = req.params.shopkeeperId;
+// 		const lastKeyItemOrder = req.query.lastKeyItemOrder || null;
+// 		const lastKeyServiceOrder = req.query.lastKeyServiceOrder || null;
+// 		const ObjectId = mongoose.Types.ObjectId;
+
+// 		const shopkeeperUser = await UserModel.findById(shopkeeperId);
+// 		if (!shopkeeperUser) {
+// 			const message = "Shopkeeper not found";
+// 			return res.json(new Response(RESPONSE.FAILURE, { message }));
+// 		}
+
+// 		const pipelineItemOrders = [
+// 			{ $match: { shopkeeperId: ObjectId(shopkeeperId) } },
+// 			{
+// 				$lookup: {
+// 					from: "Item",
+// 					localField: "itemId",
+// 					foreignField: "_id",
+// 					as: "item",
+// 				},
+// 			},
+// 			{ $unwind: "$item" },
+// 			{ $group: { _id: "$orderId", orderItemPacks: { $push: "$$ROOT" } } },
+// 			{ $sort: { _id: 1 } },
+// 			{
+// 				$lookup: {
+// 					from: "ItemOrder",
+// 					localField: "_id",
+// 					foreignField: "_id",
+// 					as: "itemOrder",
+// 				},
+// 			},
+// 			{ $unwind: "$itemOrder" },
+// 			{ $limit: Number(process.env.LIMIT_ORDERS) },
+// 			{
+// 				$lookup: {
+// 					from: "User",
+// 					localField: "itemOrder.userId",
+// 					foreignField: "_id",
+// 					as: "user",
+// 				},
+// 			},
+// 			{ $unwind: "$user" },
+// 			{
+// 				$lookup: {
+// 					from: "Address",
+// 					localField: "itemOrder.userId",
+// 					foreignField: "_id",
+// 					as: "address",
+// 				},
+// 			},
+// 			{ $unwind: "$address" },
+// 			{
+// 				$project: {
+// 					itemOrder: {
+// 						placedDate: 1,
+// 						price: 1,
+// 					},
+// 					user: {
+// 						_id: 1,
+// 						userName: 1,
+// 						phone: 1,
+// 					},
+// 					address: {
+// 						society: 1,
+// 						area: 1,
+// 						pincode: 1,
+// 						city: 1,
+// 						state: 1,
+// 					},
+// 					orderItemPacks: 1,
+// 				},
+// 			},
+// 		];
+
+// 		if (lastKeyItemOrder)
+// 			pipelineItemOrders.splice(5, 0, {
+// 				$match: { _id: { $gt: ObjectId(lastKeyItemOrder) } },
+// 			});
+
+// 		const query = { shopkeeperId: ObjectId(shopkeeperId) };
+// 		if (lastKeyServiceOrder) query._id = { $gt: ObjectId(lastKeyServiceOrder) };
+
+// 		const pipelineServiceOrders = [
+// 			{ $match: query },
+// 			{ $limit: Number(process.env.LIMIT_ORDERS) },
+// 			{
+// 				$lookup: {
+// 					from: "Service",
+// 					localField: "serviceId",
+// 					foreignField: "_id",
+// 					as: "service",
+// 				},
+// 			},
+// 			{ $unwind: "$service" },
+// 			{
+// 				$lookup: {
+// 					from: "User",
+// 					localField: "userId",
+// 					foreignField: "_id",
+// 					as: "user",
+// 				},
+// 			},
+// 			{ $unwind: "$user" },
+// 			{
+// 				$lookup: {
+// 					from: "Address",
+// 					localField: "userId",
+// 					foreignField: "_id",
+// 					as: "address",
+// 				},
+// 			},
+// 			{ $unwind: "$address" },
+// 		];
+
+// 		const [itemOrders, serviceOrders] = await Promise.all([
+// 			OrderItemPackModel.aggregate(pipelineItemOrders),
+// 			ServiceOrderModel.aggregate(pipelineServiceOrders),
+// 		]);
+
+// 		const message = "Found orders";
+// 		res.json(new Response(RESPONSE.SUCCESS, { message, itemOrders, serviceOrders }));
+// 	} catch (error) {
+// 		handleError(error);
+// 	}
+// };
+
 const getRequestedOrders = async (req, res) => {
 	try {
 		const shopkeeperId = req.params.shopkeeperId;
-		const lastKeyItemOrder = req.query.lastKeyItemOrder || null;
-		const lastKeyServiceOrder = req.query.lastKeyServiceOrder || null;
+		const page = req.query.page;
 		const ObjectId = mongoose.Types.ObjectId;
 
 		const shopkeeperUser = await UserModel.findById(shopkeeperId);
@@ -122,7 +260,7 @@ const getRequestedOrders = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const pipelineItemOrders = [
+		const pipeline = [
 			{ $match: { shopkeeperId: ObjectId(shopkeeperId) } },
 			{
 				$lookup: {
@@ -133,8 +271,13 @@ const getRequestedOrders = async (req, res) => {
 				},
 			},
 			{ $unwind: "$item" },
-			{ $group: { _id: "$orderId", orderItemPacks: { $push: "$$ROOT" } } },
-			{ $sort: { _id: 1 } },
+			{
+				$group: {
+					_id: "$orderId",
+					shopkeeperId: { $first: "$shopkeeperId" },
+					orderItemPacks: { $push: "$$ROOT" },
+				},
+			},
 			{
 				$lookup: {
 					from: "ItemOrder",
@@ -144,77 +287,93 @@ const getRequestedOrders = async (req, res) => {
 				},
 			},
 			{ $unwind: "$itemOrder" },
-			{ $limit: Number(process.env.LIMIT_ORDERS) },
+			{ $group: { _id: "$shopkeeperId", itemOrders: { $push: "$$ROOT" } } },
 			{
 				$lookup: {
-					from: "User",
-					localField: "itemOrder.userId",
-					foreignField: "_id",
-					as: "user",
-				},
-			},
-			{ $unwind: "$user" },
-			{
-				$lookup: {
-					from: "Address",
-					localField: "itemOrder.userId",
-					foreignField: "_id",
-					as: "address",
-				},
-			},
-			{ $unwind: "$address" },
-			{
-				$project: {
-					itemOrder: {
-						placedDate: 1,
-						price: 1,
-					},
-					user: {
-						_id: 1,
-						userName: 1,
-						phone: 1,
-					},
-					address: {
-						society: 1,
-						area: 1,
-						pincode: 1,
-						city: 1,
-						state: 1,
-					},
-					orderItemPacks: 1,
+					from: "ServiceOrder",
+					localField: "_id",
+					foreignField: "shopkeeperId",
+					as: "serviceOrders",
 				},
 			},
 		];
 
-		if (lastKeyItemOrder)
-			pipelineItemOrders.splice(5, 0, {
-				$match: { _id: { $gt: ObjectId(lastKeyItemOrder) } },
-			});
+		const pipelineCount = [
+			...pipeline,
+			{
+				$project: {
+					totalItems: { $sum: [{ $size: "$itemOrders" }, { $size: "$serviceOrders" }] },
+				},
+			},
+		];
 
-		const query = { shopkeeperId: ObjectId(shopkeeperId) };
-		if (lastKeyServiceOrder) query._id = { $gt: ObjectId(lastKeyServiceOrder) };
-
-		const pipelineServiceOrders = [
-			{ $match: query },
+		pipeline.push(
+			{ $project: { orders: { $concatArrays: ["$itemOrders", "$serviceOrders"] } } },
+			{ $unwind: "$orders" },
+			{
+				$project: {
+					_id: 0,
+					placedDate: {
+						$cond: {
+							if: "$orders.itemOrder.placedDate",
+							then: "$orders.itemOrder.placedDate",
+							else: "$orders.placedDate",
+						},
+					},
+					userId: {
+						$cond: {
+							if: "$orders.itemOrder.userId",
+							then: "$orders.itemOrder.userId",
+							else: "$orders.userId",
+						},
+					},
+					orderItemPacks: "$orders.orderItemPacks",
+					itemOrder: "$orders.itemOrder",
+					serviceOrder: {
+						_id: "$orders._id",
+						placedDate: "$orders.placedDate",
+						deliveredDate: "$orders.deliveredDate",
+						status: "$orders.status",
+						metaData: "$orders.metaData",
+						userId: "$orders.userId",
+						workerId: "$orders.workerId",
+						serviceId: "$orders.serviceId",
+						price: "$orders.price",
+						serviceCategory: "$orders.serviceCategory",
+					},
+				},
+			},
+			{ $sort: { placedDate: -1 } },
+			{ $skip: Number(process.env.LIMIT_ORDERS) * (page - 1) },
 			{ $limit: Number(process.env.LIMIT_ORDERS) },
 			{
 				$lookup: {
+					from: "User",
+					localField: "userId",
+					foreignField: "_id",
+					as: "user",
+				},
+			},
+			{
+				$unwind: {
+					path: "$user",
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
 					from: "Service",
-					localField: "serviceId",
+					localField: "serviceOrder.serviceId",
 					foreignField: "_id",
 					as: "service",
 				},
 			},
-			{ $unwind: "$service" },
 			{
-				$lookup: {
-					from: "User",
-					localField: "userId",
-					foreignField: "_id",
-					as: "user",
+				$unwind: {
+					path: "$service",
+					preserveNullAndEmptyArrays: true,
 				},
 			},
-			{ $unwind: "$user" },
 			{
 				$lookup: {
 					from: "Address",
@@ -223,16 +382,52 @@ const getRequestedOrders = async (req, res) => {
 					as: "address",
 				},
 			},
-			{ $unwind: "$address" },
-		];
+			{
+				$unwind: {
+					path: "$address",
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
+					from: "User",
+					localField: "serviceOrder.workerId",
+					foreignField: "_id",
+					as: "workerUser",
+				},
+			},
+			{
+				$unwind: {
+					path: "$workerUser",
+					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$lookup: {
+					from: "Worker",
+					localField: "serviceOrder.workerId",
+					foreignField: "_id",
+					as: "worker",
+				},
+			},
+			{
+				$unwind: {
+					path: "$worker",
+					preserveNullAndEmptyArrays: true,
+				},
+			}
+		);
 
-		const [itemOrders, serviceOrders] = await Promise.all([
-			OrderItemPackModel.aggregate(pipelineItemOrders),
-			ServiceOrderModel.aggregate(pipelineServiceOrders),
+		let [orders, totalItems] = await Promise.all([
+			OrderItemPackModel.aggregate(pipeline),
+			OrderItemPackModel.aggregate(pipelineCount),
 		]);
 
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Found orders";
-		res.json(new Response(RESPONSE.SUCCESS, { message, itemOrders, serviceOrders }));
+		res.json(new Response(RESPONSE.SUCCESS, { message, orders, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}

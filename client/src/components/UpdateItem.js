@@ -5,7 +5,7 @@ import * as Yup from "yup";
 
 import ErrorText from "./ErrorText";
 import ImageInput from "./ImageInput";
-import { RESPONSE } from "../enums";
+import { ROLE, RESPONSE } from "../enums";
 import { Axios, buildFormData } from "../utilities";
 import { setError } from "../redux/actions";
 
@@ -19,7 +19,7 @@ const onSubmit = async (values, setError, history, itemId, itemImage) => {
 	const data = res.data;
 
 	if (res.success === RESPONSE.FAILURE) setError(data.message);
-	else history.push(`/viewItem/${itemId}`);
+	else history.goBack();
 };
 
 const validationSchema = Yup.object({
@@ -32,7 +32,7 @@ function UpdateItem(props) {
 	const { history, location, match, auth, error } = props;
 	const { setError } = props;
 
-	const itemId = match.params?.itemId;
+	const itemId = match.params.itemId;
 	const [loading, setLoading] = useState(true);
 	const [isAvailable, setIsAvailable] = useState(false);
 	const [itemImage, setItemImage] = useState(null);
@@ -48,7 +48,11 @@ function UpdateItem(props) {
 					setError(res.data.message);
 					history.goBack();
 				} else {
-					if (res.data.item.shopkeeperId !== auth.user._id) history.goBack();
+					if (
+						res.data.item.shopkeeperId !== auth.user._id &&
+						![ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role)
+					)
+						history.goBack();
 					else {
 						initialValues.itemName = res.data.item.itemName;
 						initialValues.price = res.data.item.price;
@@ -66,6 +70,7 @@ function UpdateItem(props) {
 	}, [location.pathname]);
 
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		setItemImageError(null);
 		setItemImage(files.length ? files[0] : null);
 	}, []);

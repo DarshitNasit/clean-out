@@ -56,12 +56,14 @@ function ViewItemOrder(props) {
 	}
 
 	async function replaceOrder() {
+		setError("");
 		const res = await Axios.POST(`/itemOrder/${itemOrder._id}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		history.push(`/viewItemOrder/${res.data.id}`);
 	}
 
 	async function cancelOrderItemPack(orderItemPackId, index) {
+		setError("");
 		if (orderItemPacks[index].status === STATUS.CANCELLED) return;
 		const res = await Axios.DELETE(`/itemOrder/${orderItemPackId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
@@ -79,6 +81,7 @@ function ViewItemOrder(props) {
 	}
 
 	async function cancelOrderItemPacks() {
+		setError("");
 		await Promise.all(
 			orderItemPacks.map((orderItemPack) => {
 				if (orderItemPack.status === STATUS.CANCELLED) return;
@@ -94,6 +97,7 @@ function ViewItemOrder(props) {
 	}
 
 	async function changeOrderItemPacksStatus() {
+		setError("");
 		let value;
 		if (status === STATUS.PENDING) value = STATUS.DISPATCHED;
 		else if (status === STATUS.DISPATCHED) value = STATUS.DELIVERED;
@@ -116,8 +120,6 @@ function ViewItemOrder(props) {
 		setStatus(value);
 	}
 
-	console.log("status", status);
-
 	return (
 		<div className="flex flex-col min-h80 btn-main">
 			{!loading && (
@@ -134,10 +136,14 @@ function ViewItemOrder(props) {
 										className="flex flex-col align-center ml-10 mr-10 justify-around"
 									>
 										<Product
+											className="hover-pointer"
 											item={{
 												...orderItemPack.item,
 												price: orderItemPack.price,
 											}}
+											onClick={() =>
+												history.push(`/viewItem/${orderItemPack.item._id}`)
+											}
 										/>
 										<div className="white btn-violet pl-10 pr-10 pt-5 pb-5">
 											<p>Qty : {orderItemPack.count}</p>

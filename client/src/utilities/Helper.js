@@ -1,7 +1,11 @@
 import axios from "axios";
+import { ROLE, RESPONSE } from "../enums";
+import Axios from "./Axios";
+
 export {
 	arrayToString,
 	buildFormData,
+	coadminFirewall,
 	dataURLtoFile,
 	isEmptyObject,
 	setAuthToken,
@@ -27,6 +31,16 @@ function buildFormData(data) {
 
 	const headers = { "Content-Type": "multipart/form-data" };
 	return { formData, headers };
+}
+
+async function coadminFirewall(auth, userId, history, setError, cb, ...args) {
+	if (auth.user.role === ROLE.ADMIN) cb(...args);
+
+	const res = await Axios.GET(`/user/${userId}`);
+	if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+	if (res.data.user.role === ROLE.COADMIN && auth.user._id !== res.data.user._id)
+		return history.goBack();
+	cb(...args);
 }
 
 function dataURLtoFile(dataURL, filename) {

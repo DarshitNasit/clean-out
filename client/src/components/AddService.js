@@ -49,7 +49,7 @@ const onSubmit = async (values, setError, history, user, home) => {
 
 	const res = await Axios.POST(`/service/${user._id}`, values);
 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	else history.push(`/viewAllServices`);
+	else history.goBack();
 };
 
 const validationSchema = Yup.object({

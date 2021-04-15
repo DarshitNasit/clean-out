@@ -5,15 +5,15 @@ import Name from "../Name";
 import ErrorText from "../ErrorText";
 import ViewItemBar from "../ViewItemBar";
 import ViewServiceBar from "../ViewServiceBar";
-import { setError, logoutUser } from "../../redux/actions";
-import { Axios } from "../../utilities";
+import { setError } from "../../redux/actions";
+import { Axios, coadminFirewall } from "../../utilities";
 import { RESPONSE, ROLE } from "../../enums";
 
 function ViewProfile(props) {
-	const { history, location, error } = props;
+	const { history, match, auth, location, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
-	const [tempUser, setTempUser] = useState(null);
 	const [user, setUser] = useState(null);
 	const [address, setAddress] = useState(null);
 	const [worker, setWorker] = useState(null);
@@ -24,27 +24,20 @@ function ViewProfile(props) {
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		// if (state && state.tempUser) setTempUser(state.tempUser);
-		// else history.goBack();
+		if (!userId) return history.goBack();
+		coadminFirewall(auth, userId, history, setError, getUserWithOrders);
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
-	useEffect(() => {
-		if (tempUser) getUserWithOrders();
-	}, [tempUser]);
-
-	// async function getUser() {
-	// 	if (!phone) history.goBack();
-	// 	const res = await Axios.GET(`/user/phone`, { phone });
-	// 	if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-	// 	setTempUser(res.data.user);
-	// }
-
 	async function getUserWithOrders() {
+		let res = await Axios.GET(`/user/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		const tempUser = res.data.user;
 		if (tempUser.role === ROLE.WORKER) {
-			const res = await Axios.GET(`/worker/withOrders/${tempUser._id}`);
+			res = await Axios.GET(`/worker/withOrders/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else {
 				setUser(res.data.workerUser);
@@ -57,7 +50,7 @@ function ViewProfile(props) {
 				setLoading(false);
 			}
 		} else if (tempUser.role === ROLE.SHOPKEEPER) {
-			const res = await Axios.GET(`/shopkeeper/withOrders/${tempUser._id}`);
+			res = await Axios.GET(`/shopkeeper/withOrders/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else {
 				setUser(res.data.shopkeeperUser);
@@ -68,7 +61,7 @@ function ViewProfile(props) {
 				setLoading(false);
 			}
 		} else {
-			const res = await Axios.GET(`/user/withOrders/${tempUser._id}`);
+			res = await Axios.GET(`/user/withOrders/${tempUser._id}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else {
 				setUser(res.data.user);
@@ -82,28 +75,29 @@ function ViewProfile(props) {
 
 	function editProfile() {
 		setError("");
-		history.push("/admin/updateProfile", { tempUser });
+		history.push(`/admin/updateProfile/${userId}`);
 	}
 
 	async function deleteProfile() {
 		setError("");
-		if (tempUser.role === ROLE.WORKER) {
-			const res = await Axios.DELETE(`/worker/${tempUser._id}`);
+		if (user.role === ROLE.WORKER) {
+			const res = await Axios.DELETE(`/worker/${userId}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else history.goBack();
-		} else if (tempUser.role === ROLE.SHOPKEEPER) {
-			const res = await Axios.DELETE(`/shopkeeper/${tempUser._id}`);
+		} else if (user.role === ROLE.SHOPKEEPER) {
+			const res = await Axios.DELETE(`/shopkeeper/${userId}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else history.goBack();
 		} else {
-			const res = await Axios.DELETE(`/user/${tempUser._id}`);
+			const res = await Axios.DELETE(`/user/${userId}`);
 			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
 			else history.goBack();
 		}
 	}
 
 	async function leaveShop() {
-		const res = await Axios.DELETE(`/worker/leaveShop/${tempUser._id}`);
+		setError("");
+		const res = await Axios.DELETE(`/worker/leaveShop/${userId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		setWorker((prevWorker) => {
 			const newWorker = { ...prevWorker };
@@ -114,11 +108,43 @@ function ViewProfile(props) {
 		setWorkerShopkeeper(null);
 	}
 
-	async function verifyUser() {}
+	async function verifyUser() {
+		setError("");
+		const res = await Axios.PUT(`/admin/verify`, { userId: user._id });
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+		if (worker) setWorker((prev) => ({ ...prev, isVerified: true }));
+		else if (shopkeeper) setShopkeeper((prev) => ({ ...prev, isVerified: true }));
+	}
+
+	function addItem() {
+		history("");
+		history.push(`/admin/addItem/${userId}`);
+	}
+
+	function addService() {
+		history("");
+		history.push(`/admin/addService/${userId}`);
+	}
+
+	function viewCart() {
+		history("");
+		history.push(`/admin/cart/${userId}`);
+	}
 
 	function parseSubCategoryNames(subCategories) {
 		let names = subCategories.map((subCategory) => subCategory.name);
 		return names.join(", ");
+	}
+
+	async function toggleCoadmin() {
+		history("");
+		const res = await Axios.PUT(`/admin/toggleCoadmin`, { userId });
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+		setUser((prev) => {
+			const result = { ...prev };
+			result.role = res.data.role;
+			return result;
+		});
 	}
 
 	return (
@@ -141,6 +167,8 @@ function ViewProfile(props) {
 									>
 										{user && user.userName}
 									</Name>
+									<p>Role : {user && user.role}</p>
+									{shopkeeper && <p>Shop : {shopkeeper.shopName}</p>}
 									<p>{user && user.phone}</p>
 									{address && (
 										<p>
@@ -171,16 +199,45 @@ function ViewProfile(props) {
 									/>
 								)}
 							</div>
-							<div className="buttons mr-auto ml-50 pt-20">
+							<div className="buttons mr-auto ml-20 pt-20">
 								<button className="btn btn-success" onClick={editProfile}>
 									Edit
 								</button>
 								<button className="btn btn-danger ml-10" onClick={deleteProfile}>
 									Delete
 								</button>
+								<button className="btn btn-success ml-10" onClick={viewCart}>
+									Cart
+								</button>
+								{(shopkeeper || worker) && (
+									<button
+										className="btn btn-success ml-10"
+										onClick={verifyUser}
+										disabled={
+											(shopkeeper && shopkeeper.isVerified) ||
+											(worker && worker.isVerified)
+										}
+									>
+										Verified
+									</button>
+								)}
 								{worker && worker.isDependent === "true" && (
 									<button className="btn btn-violet ml-10" onClick={leaveShop}>
 										Leave Shop
+									</button>
+								)}
+								{auth.user.role === ROLE.ADMIN && (
+									<button
+										className={`btn ml-10 ${
+											user.role === ROLE.COADMIN
+												? "btn-danger"
+												: "btn-success"
+										}`}
+										onClick={toggleCoadmin}
+									>
+										{user.role === ROLE.COADMIN
+											? "Remove Coadmin"
+											: "Add Coadmin"}
 									</button>
 								)}
 							</div>
@@ -191,27 +248,13 @@ function ViewProfile(props) {
 								<div className="flex flex-row">
 									{worker &&
 										worker.proofs.map((proof) => (
-											<a
+											<img
 												key={proof}
-												href={`/images/${proof}`}
-												target="_blank"
-											>
-												<img
-													height="250"
-													border="0"
-													align="center"
-													className="mt-10 mr-10"
-													src=""
-													alt="proof"
-												/>
-											</a>
-											// <img
-											// 	key={proof}
-											// 	className="mt-10 mr-10"
-											// 	src={`/images/${proof}`}
-											// 	height="200px"
-											// 	alt="Proof"
-											// ></img>
+												className="mt-10 mr-10"
+												src={`/images/${proof}`}
+												height="200px"
+												alt="Proof"
+											></img>
 										))}
 									{shopkeeper &&
 										shopkeeper.proofs.map((proof) => (
@@ -224,12 +267,12 @@ function ViewProfile(props) {
 											></img>
 										))}
 								</div>
-								<div className="buttons mt-20 mr-auto">
+								<div className="flex flex-row mt-20 ml-10">
 									{shopkeeper && (
 										<button
 											className="btn btn-violet"
 											onClick={() =>
-												history.push("/admin/viewAllItems", { tempUser })
+												history.push(`/admin/viewAllItems/${userId}`)
 											}
 										>
 											Items
@@ -239,7 +282,7 @@ function ViewProfile(props) {
 										<button
 											className="btn btn-violet ml-10"
 											onClick={() =>
-												history.push("/admin/viewAllServices", { tempUser })
+												history.push(`/admin/viewAllServices/${userId}`)
 											}
 										>
 											Services
@@ -249,22 +292,42 @@ function ViewProfile(props) {
 										<button
 											className="btn btn-violet ml-10"
 											onClick={() =>
-												history.push("/viewAllWorkers", { tempUser })
+												history.push(`/admin/viewAllWorkers/${userId}`)
 											}
 										>
 											Workers
 										</button>
 									)}
+
 									{(shopkeeper || worker) && (
 										<button
-											className="btn btn-success ml-10"
-											onClick={verifyUser}
+											className="btn btn-violet ml-10"
+											onClick={() =>
+												history.push(
+													`/admin/viewAllRequestedOrders/${userId}`
+												)
+											}
 											disabled={
 												(shopkeeper && shopkeeper.isVerified) ||
 												(worker && worker.isVerified)
 											}
 										>
-											Verified
+											Requested Orders
+										</button>
+									)}
+
+									{(shopkeeper || (worker && worker.isDependent !== "true")) && (
+										<button
+											className="btn btn-violet ml-auto"
+											onClick={addService}
+										>
+											Add Service
+										</button>
+									)}
+
+									{shopkeeper && (
+										<button className="btn btn-violet ml-10" onClick={addItem}>
+											Add Item
 										</button>
 									)}
 								</div>
@@ -289,8 +352,7 @@ function ViewProfile(props) {
 									className="mt-10 btn-main hover-pointer"
 									onClick={() =>
 										history.push(
-											`/viewServiceOrder/${serviceOrder.serviceOrder._id}`,
-											{ tempUser }
+											`/admin/viewServiceOrder/${serviceOrder.serviceOrder._id}`
 										)
 									}
 								/>
@@ -303,12 +365,10 @@ function ViewProfile(props) {
 									key={itemOrder.itemOrder._id}
 									orderItemPacks={itemOrder.orderItemPacks}
 									className="mt-10 btn-main hover-pointer"
-									onClick={
-										(() =>
-											history.push(
-												`/viewItemOrder/${itemOrder.itemOrder._id}`
-											),
-										{ tempUser })
+									onClick={() =>
+										history.push(
+											`/admin/viewItemOrder/${itemOrder.itemOrder._id}`
+										)
 									}
 								/>
 							))}
@@ -330,7 +390,6 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
 	return {
 		setError: (error) => dispatch(setError(error)),
-		logoutUser: (history) => logoutUser(history)(dispatch),
 	};
 }
 

@@ -5,7 +5,7 @@ import StarIcon from "@material-ui/icons/Star";
 import Name from "./Name";
 import ErrorText from "./ErrorText";
 import FeedbackForm from "./FeedbackForm";
-import { RESPONSE } from "../enums";
+import { RESPONSE, ROLE } from "../enums";
 import { Axios } from "../utilities";
 import { setError } from "../redux/actions";
 
@@ -115,7 +115,9 @@ function ViewWorkerService(props) {
 
 	async function editService() {
 		setError("");
-		history.push(`/updateService/${service._id}`);
+		if ([ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role))
+			history.push(`/admin/updateService/${service._id}`);
+		else history.push(`/updateService/${service._id}`);
 	}
 
 	async function deleteService() {
@@ -139,7 +141,7 @@ function ViewWorkerService(props) {
 
 		const res = await Axios.POST(`/service/bookService/${workerServiceId}`, data);
 		if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-		else history.goBack();
+		else history.push(`/viewServiceOrder/${res.data.id}`);
 	}
 
 	async function moreRatings() {
@@ -256,7 +258,8 @@ function ViewWorkerService(props) {
 							</div>
 						</div>
 
-						{auth.isAuthenticated && service.serviceProviderId === auth.user._id && (
+						{((auth.isAuthenticated && service.serviceProviderId === auth.user._id) ||
+							[ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role)) && (
 							<div className="buttons mt-10 mb-50">
 								<button className="btn btn-success" onClick={editService}>
 									Edit

@@ -3,10 +3,10 @@ import { Formik, Form, Field, ErrorMessage, FieldArray } from "formik";
 import { connect } from "react-redux";
 import * as Yup from "yup";
 
-import ErrorText from "./ErrorText";
-import { ROLE, RESPONSE } from "../enums";
-import { Axios, isEmptyObject } from "../utilities";
-import { setError, getDataForHome } from "../redux/actions";
+import ErrorText from "../ErrorText";
+import { ROLE, RESPONSE } from "../../enums";
+import { Axios, isEmptyObject } from "../../utilities";
+import { setError, getDataForHome } from "../../redux/actions";
 
 const initialValues = {
 	serviceName: "",
@@ -15,7 +15,7 @@ const initialValues = {
 	description: "",
 };
 
-const onSubmit = async (values, setError, history, user, home) => {
+const onSubmit = async (values, setError, history, userId, home) => {
 	setError("");
 	values = {
 		...values,
@@ -47,9 +47,9 @@ const onSubmit = async (values, setError, history, user, home) => {
 		}
 	}
 
-	const res = await Axios.POST(`/service/${user._id}`, values);
+	const res = await Axios.POST(`/service/${userId}`, values);
 	if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-	else history.push(`/viewAllServices`);
+	else history.goBack();
 };
 
 const validationSchema = Yup.object({
@@ -59,24 +59,15 @@ const validationSchema = Yup.object({
 });
 
 function AddService(props) {
-	const { history, location, auth, error, home } = props;
+	const { history, location, match, error, home } = props;
 	const { setError, getDataForHome } = props;
+
+	const userId = match.params.userId;
 	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
+		if (!userId) return history.goBack();
 		getUser();
-		async function getUser() {
-			if (!auth.isAuthenticated) history.push("/login");
-			else if (auth.user.role === ROLE.USER) history.goBack();
-			else if (auth.user.role === ROLE.WORKER) {
-				const res = await Axios.GET(`/worker/${auth.user._id}`);
-				if (res.data.worker.isDependent === "true") history.goBack();
-				else if (!home.isLoaded) getDataForHome(history);
-				else setLoading(false);
-			} else if (!home.isLoaded) getDataForHome(history);
-			else setLoading(false);
-		}
-
 		return () => {
 			setLoading(true);
 		};
@@ -89,6 +80,21 @@ function AddService(props) {
 		}
 	}, [home]);
 
+	async function getUser() {
+		let res = await Axios.GET(`/user/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		const user = res.data.user;
+		if (user.role === ROLE.USER) history.goBack();
+		else if (user.role === ROLE.WORKER) {
+			const res = await Axios.GET(`/worker/${userId}`);
+			if (res.data.worker.isDependent === "true") history.goBack();
+			else if (!home.isLoaded) getDataForHome(history);
+			else setLoading(false);
+		} else if (!home.isLoaded) getDataForHome(history);
+		else setLoading(false);
+	}
+
 	return (
 		<div className="card_container">
 			{!loading && (
@@ -98,7 +104,7 @@ function AddService(props) {
 					<Formik
 						initialValues={initialValues}
 						validationSchema={validationSchema}
-						onSubmit={(values) => onSubmit(values, setError, history, auth.user, home)}
+						onSubmit={(values) => onSubmit(values, setError, history, userId, home)}
 					>
 						{(formik) => {
 							return (
@@ -227,7 +233,6 @@ function AddService(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		home: state.home,
 		error: state.error,
 	};

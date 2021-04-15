@@ -3,26 +3,39 @@ import { Formik, Form, Field, FieldArray, ErrorMessage } from "formik";
 import { connect } from "react-redux";
 import * as Yup from "yup";
 
-import ErrorText from "./ErrorText";
-import ImageInput from "./ImageInput";
-import { ROLE, RESPONSE } from "../enums";
-import { Axios, arrayToString, buildFormData, stringToArray } from "../utilities";
-import { setError } from "../redux/actions";
+import ErrorText from "../ErrorText";
+import ImageInput from "../ImageInput";
+import { ROLE, RESPONSE } from "../../enums";
+import {
+	Axios,
+	arrayToString,
+	buildFormData,
+	coadminFirewall,
+	stringToArray,
+} from "../../utilities";
+import { setError } from "../../redux/actions";
 
 let initialValues = {};
 
 const onSubmit = async (values, setError, history, user, profilePicture, proofs) => {
 	setError(null);
 	const resource =
-		user.role === ROLE.USER ? "user" : user.role === ROLE.WORKER ? "worker" : "shopkeeper";
+		user.role === ROLE.WORKER
+			? "worker"
+			: user.role === ROLE.SHOPKEEPER
+			? "shopkeeper"
+			: "user";
 
 	let res, data;
-	if (user.role === ROLE.USER) res = await Axios.PUT(`/${resource}/${user._id}`, values);
-	else {
-		data = { ...values, pincodes: arrayToString(values.pincodes), profilePicture, proofs };
+	if (user.role === ROLE.WORKER || user.role === ROLE.SHOPKEEPER) {
+		data = { ...values, proofs };
+		if (user.role === ROLE.WORKER) {
+			data.profilePicture = profilePicture;
+			data.pincodes = arrayToString(values.pincodes);
+		}
 		const { formData, headers } = buildFormData(data);
 		res = await Axios.PUT(`/${resource}/${user._id}`, formData, headers);
-	}
+	} else res = await Axios.PUT(`/${resource}/${user._id}`, values);
 
 	data = res.data;
 	if (res.success === RESPONSE.SUCCESS) history.goBack();
@@ -43,15 +56,12 @@ const validationSchema = Yup.object({
 	pincode: Yup.string().required("Required").length(6, "Invalid pincode"),
 	city: Yup.string().required("Required"),
 	state: Yup.string().required("Required"),
-	pincodes: Yup.array()
-		.of(
-			Yup.number()
-				.min(100000, "Invalid pincode")
-				.max(999999, "Invalid pincode")
-				.required("Required")
-				.typeError("Invalid pincode")
-		)
-		.min(1, "At least one pincode is required"),
+	pincodes: Yup.array().of(
+		Yup.number()
+			.min(100000, "Invalid pincode")
+			.max(999999, "Invalid pincode")
+			.typeError("Invalid pincode")
+	),
 	shopName: Yup.string(),
 });
 
@@ -60,47 +70,53 @@ const required = (value) => {
 };
 
 function UpdateProfile(props) {
-	const { history, location, auth, error } = props;
+	const { history, location, match, auth, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
+	const [user, setUser] = useState(null);
 	const [loading, setLoading] = useState(true);
 	const [profilePicture, setProfilePicture] = useState(null);
 	const [proofs, setProofs] = useState(null);
 
 	useEffect(() => {
-		getUser();
-		async function getUser() {
-			if (!auth.isAuthenticated) history.push("/login");
-			else {
-				const res = await Axios.GET(`/user/${auth.user._id}`);
-				initialValues.userName = res.data.user.userName;
-				initialValues.phone = res.data.user.phone;
-				initialValues.password = "";
-				initialValues.newPassword = "";
-				initialValues.confirmPassword = "";
-				initialValues.society = res.data.address.society;
-				initialValues.area = res.data.address.area;
-				initialValues.pincode = res.data.address.pincode;
-				initialValues.city = res.data.address.city;
-				initialValues.state = res.data.address.state;
-
-				if (auth.user.role === ROLE.WORKER) {
-					const resW = await Axios.GET(`/worker/${auth.user._id}`);
-					initialValues.pincodes = stringToArray(resW.data.worker.pincodes);
-				} else if (auth.user.role === ROLE.SHOPKEEPER) {
-					const resS = await Axios.GET(`/shopkeeper/${auth.user._id}`);
-					initialValues.shopName = resS.data.shopkeeper.shopName;
-				}
-				setLoading(false);
-			}
-		}
-
+		if (!userId) return history.goBack();
+		coadminFirewall(auth, userId, history, setError, getUser);
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
+	async function getUser() {
+		if (!userId) return history.goBack();
+
+		const res = await Axios.GET(`/user/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		setUser(res.data.user);
+		initialValues.userName = res.data.user.userName;
+		initialValues.phone = res.data.user.phone;
+		initialValues.password = "";
+		initialValues.newPassword = "";
+		initialValues.confirmPassword = "";
+		initialValues.society = res.data.address.society;
+		initialValues.area = res.data.address.area;
+		initialValues.pincode = res.data.address.pincode;
+		initialValues.city = res.data.address.city;
+		initialValues.state = res.data.address.state;
+
+		if (res.data.user.role === ROLE.WORKER) {
+			const resW = await Axios.GET(`/worker/${userId}`);
+			initialValues.pincodes = stringToArray(resW.data.worker.pincodes);
+		} else if (res.data.user.role === ROLE.SHOPKEEPER) {
+			const resS = await Axios.GET(`/shopkeeper/${userId}`);
+			initialValues.shopName = resS.data.shopkeeper.shopName;
+		}
+		setLoading(false);
+	}
+
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		if (name === "profilePicture") {
 			setProfilePicture(files.length ? files[0] : null);
 		} else if (files.length) {
@@ -119,13 +135,13 @@ function UpdateProfile(props) {
 		<div className="card_container">
 			{!loading && (
 				<>
-					<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
+					<h2 className="temp-white mt-20 mb-10">Update Profile</h2>
 					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
 						initialValues={initialValues}
 						validationSchema={validationSchema}
 						onSubmit={(values) =>
-							onSubmit(values, setError, history, auth.user, profilePicture, proofs)
+							onSubmit(values, setError, history, user, profilePicture, proofs)
 						}
 					>
 						{(formik) => {
@@ -210,7 +226,7 @@ function UpdateProfile(props) {
 										</div>
 									</div>
 
-									{auth.user.role === ROLE.WORKER && (
+									{user.role === ROLE.WORKER && (
 										<>
 											<div className="form-control-2">
 												<div className="form-control">
@@ -243,7 +259,6 @@ function UpdateProfile(props) {
 															form,
 														} = fieldArrayProps;
 														const { pincodes } = form.values;
-														console.log(pincodes);
 
 														return (
 															<div className="flex flex-col">
@@ -270,6 +285,7 @@ function UpdateProfile(props) {
 																					paddingLeft:
 																						"5px",
 																				}}
+																				validate={required}
 																			/>
 																			<button
 																				type="button"
@@ -319,7 +335,7 @@ function UpdateProfile(props) {
 										</>
 									)}
 
-									{auth.user.role === ROLE.SHOPKEEPER && (
+									{user.role === ROLE.SHOPKEEPER && (
 										<>
 											<div className="form-control">
 												<label htmlFor="proofs">ID Proofs (max 2)</label>
@@ -353,9 +369,9 @@ function UpdateProfile(props) {
 												!formik.dirty ||
 												!formik.isValid ||
 												formik.isSubmitting ||
-												(auth.user.role === ROLE.WORKER &&
+												(user.role === ROLE.WORKER &&
 													!formik.values.pincodes.length) ||
-												(auth.user.role === ROLE.SHOPKEEPER &&
+												(user.role === ROLE.SHOPKEEPER &&
 													!formik.values.shopName)
 											)
 										}

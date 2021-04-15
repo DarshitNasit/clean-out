@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 
-import ErrorText from "./ErrorText";
-import { RESPONSE } from "../enums";
-import { Axios } from "../utilities";
-import { setError } from "../redux/actions";
+import ErrorText from "../ErrorText";
+import { RESPONSE } from "../../enums";
+import { Axios } from "../../utilities";
+import { setError } from "../../redux/actions";
 
 function ViewService(props) {
-	const { history, location, match, auth, error } = props;
+	const { history, location, match, error } = props;
 	const { setError } = props;
 
 	const serviceId = match.params.serviceId;
@@ -16,24 +16,23 @@ function ViewService(props) {
 
 	useEffect(() => {
 		if (!serviceId) history.goBack();
-
 		getService();
-		async function getService() {
-			const res = await Axios.GET(`/service/${serviceId}`);
-			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-			if (res.data.service.serviceProviderId !== auth.user._id) history.goBack();
-			setService(res.data.service);
-			setLoading(false);
-		}
-
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
+	async function getService() {
+		const res = await Axios.GET(`/service/${serviceId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		setService(res.data.service);
+		setLoading(false);
+	}
+
 	function editService() {
 		setError("");
-		history.push(`/updateService/${serviceId}`);
+		history.push(`/admin/updateService/${serviceId}`);
 	}
 
 	async function deleteService() {
@@ -109,7 +108,6 @@ function ViewService(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		error: state.error,
 	};
 }

@@ -35,7 +35,19 @@ import ViewWorkerService from "./components/ViewWorkerService";
 import ViewAllRequestedOrders from "./components/ViewAllRequestedOrders";
 
 import Admin from "./components/Admin/Admin";
+import AdminCart from "./components/Admin/Cart";
+import AdminAddItem from "./components/Admin/AddItem";
+import AdminAddWorker from "./components/Admin/AddWorker";
+import AdminAddService from "./components/Admin/AddService";
 import AdminViewProfile from "./components/Admin/ViewProfile";
+import AdminViewService from "./components/Admin/ViewService";
+import AdminViewAllItems from "./components/Admin/ViewAllItems";
+import AdminUpdateService from "./components/Admin/UpdateService";
+import AdminUpdateProfile from "./components/Admin/UpdateProfile";
+import AdminViewAllWorkers from "./components/Admin/ViewAllWorkers";
+import AdminViewAllServices from "./components/Admin/ViewAllServices";
+import AdminViewServiceOrder from "./components/Admin/ViewServiceOrder";
+import AdminViewAllRequestedOrders from "./components/Admin/ViewAllRequestedOrders";
 
 import { setUserFromStorage } from "./redux/actions";
 
@@ -54,8 +66,6 @@ function App() {
 				<Route path="/viewItem/:itemId" exact component={ViewItem} />
 				<Route path="/store/services" exact component={ServiceStore} />
 				<Route path="/forgotPassword" exact component={ForgotPassword} />
-				<Route path="/viewService/:serviceId" exact component={ViewService} />
-				<Route path="/viewItemOrder/:itemOrderId" exact component={ViewItemOrder} />
 				<Route
 					path="/viewWorkerService/:workerServiceId"
 					exact
@@ -74,6 +84,12 @@ function App() {
 					<PrivateRoute path="/updateItem/:itemId" exact component={UpdateItem} />
 					<PrivateRoute path="/viewWorker/:workerId" exact component={ViewWorker} />
 					<PrivateRoute path="/viewAllServices" exact component={ViewAllServices} />
+					<PrivateRoute path="/viewService/:serviceId" exact component={ViewService} />
+					<PrivateRoute
+						path="/viewItemOrder/:itemOrderId"
+						exact
+						component={ViewItemOrder}
+					/>
 					<PrivateRoute
 						path="/viewServiceOrder/:serviceOrderId"
 						exact
@@ -93,7 +109,59 @@ function App() {
 
 				<Switch>
 					<AdminRoute path="/admin" exact component={Admin} />
-					<AdminRoute path="/admin/viewProfile" exact component={AdminViewProfile} />
+					<AdminRoute path="/admin/cart/:userId" exact component={AdminCart} />
+					<AdminRoute path="/admin/addItem/:userId" exact component={AdminAddItem} />
+					<AdminRoute path="/admin/addWorker/:userId" exact component={AdminAddWorker} />
+					<AdminRoute
+						path="/admin/viewService/:serviceId"
+						exact
+						component={AdminViewService}
+					/>
+					<AdminRoute
+						path="/admin/updateService/:serviceId"
+						exact
+						component={AdminUpdateService}
+					/>
+					<AdminRoute
+						path="/admin/addService/:userId"
+						exact
+						component={AdminAddService}
+					/>
+					<AdminRoute
+						path="/admin/viewProfile/:userId"
+						exact
+						component={AdminViewProfile}
+					/>
+					<AdminRoute
+						path="/admin/viewServiceOrder/:serviceOrderId"
+						exact
+						component={AdminViewServiceOrder}
+					/>
+					<AdminRoute
+						path="/admin/updateProfile/:userId"
+						exact
+						component={AdminUpdateProfile}
+					/>
+					<AdminRoute
+						path="/admin/viewAllItems/:userId"
+						exact
+						component={AdminViewAllItems}
+					/>
+					<AdminRoute
+						path="/admin/viewAllWorkers/:userId"
+						exact
+						component={AdminViewAllWorkers}
+					/>
+					<AdminRoute
+						path="/admin/viewAllServices/:userId"
+						exact
+						component={AdminViewAllServices}
+					/>
+					<AdminRoute
+						path="/admin/viewAllRequestedOrders/:userId"
+						exact
+						component={AdminViewAllRequestedOrders}
+					/>
 				</Switch>
 
 				<Footer />

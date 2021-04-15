@@ -90,6 +90,7 @@ function ViewProfile(props) {
 	}
 
 	async function leaveShop() {
+		setError("");
 		const res = await Axios.DELETE(`/worker/leaveShop/${auth.user._id}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		setWorker((prevWorker) => {
@@ -102,8 +103,8 @@ function ViewProfile(props) {
 	}
 
 	function parseSubCategoryNames(subCategories) {
-		let names = subCategories.map((subCategory) => subCategory.name);
-		return names.join(", ");
+		let names = subCategories?.map((subCategory) => subCategory.name);
+		return names?.join(", ");
 	}
 
 	return (
@@ -126,6 +127,8 @@ function ViewProfile(props) {
 									>
 										{user && user.userName}
 									</Name>
+									<p>Role : {user && user.role}</p>
+									{shopkeeper && <p>Shop : {shopkeeper.shopName}</p>}
 									<p>{user && user.phone}</p>
 									{address && (
 										<p>
@@ -224,20 +227,20 @@ function ViewProfile(props) {
 					</div>
 
 					<div className="flex flex-row mt-20 btn-light flex-grow pb-50">
-						<div className="flex flex-col width50 mt-20">
+						<div className="flex flex-col width60 mt-20">
 							<p className="ml-auto mr-auto">Previous Services Orders</p>
 							{serviceOrders.map((serviceOrder) => (
 								<ViewServiceBar
 									key={serviceOrder.serviceOrder._id}
-									serviceName={serviceOrder.service.serviceName}
-									serviceCategory={serviceOrder.service.serviceCategory}
+									serviceName={serviceOrder?.service?.serviceName}
+									serviceCategory={serviceOrder?.service?.serviceCategory}
 									subCategories={parseSubCategoryNames(
-										serviceOrder.service.subCategories
+										serviceOrder?.service?.subCategories
 									)}
-									price={serviceOrder.serviceOrder.price}
-									workerName={serviceOrder.workerUser.userName}
-									status={serviceOrder.serviceOrder.status}
-									className="mt-10 btn-main hover-pointer"
+									price={serviceOrder?.serviceOrder?.price}
+									workerName={serviceOrder.workerUser?.userName}
+									status={serviceOrder.serviceOrder?.status}
+									className="mt-10 mb-10 btn-main hover-pointer p-10 ml-20 mr-20 shadow"
 									onClick={() =>
 										history.push(
 											`/viewServiceOrder/${serviceOrder.serviceOrder._id}`
@@ -246,13 +249,14 @@ function ViewProfile(props) {
 								/>
 							))}
 						</div>
-						<div className="flex flex-col width50 mt-20">
+
+						<div className="flex flex-col width40 mt-20">
 							<p className="ml-auto mr-auto">Previous Cleaning Items Orders</p>
 							{itemOrders.map((itemOrder) => (
 								<ViewItemBar
 									key={itemOrder.itemOrder._id}
 									orderItemPacks={itemOrder.orderItemPacks}
-									className="mt-10 btn-main hover-pointer"
+									className="mt-10 btn-main hover-pointer shadow"
 									onClick={() =>
 										history.push(`/viewItemOrder/${itemOrder.itemOrder._id}`)
 									}

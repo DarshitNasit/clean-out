@@ -48,6 +48,7 @@ function AddItem(props) {
 	}, [itemImage]);
 
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		setItemImageError(null);
 		setItemImage(files.length ? files[0] : null);
 	}, []);

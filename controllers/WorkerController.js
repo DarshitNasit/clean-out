@@ -117,7 +117,7 @@ const getWorkerWithOrders = async (req, res) => {
 const getRequestedOrders = async (req, res) => {
 	try {
 		const workerId = req.params.workerId;
-		const lastKey = req.body.lastKey || null;
+		const page = req.query.page;
 
 		const workerUser = await UserModel.findById(workerId);
 		if (!workerUser) {
@@ -125,16 +125,17 @@ const getRequestedOrders = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const query = { workerId: mongoose.Types.ObjectId(workerId) };
-		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
-
-		const serviceOrders = await ServiceOrderModel.aggregate([
-			{ $match: query },
+		const pipeline = [{ $match: { workerId: mongoose.Types.ObjectId(workerId) } }];
+		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+		pipeline.push(
+			{ $sort: { placedDate: -1 } },
+			{ $skip: Number(process.env.LIMIT_ORDERS) * (page - 1) },
 			{ $limit: Number(process.env.LIMIT_ORDERS) },
+			{ $project: { serviceOrder: "$$ROOT" } },
 			{
 				$lookup: {
 					from: "Service",
-					localField: "serviceId",
+					localField: "serviceOrder.serviceId",
 					foreignField: "_id",
 					as: "service",
 				},
@@ -143,7 +144,7 @@ const getRequestedOrders = async (req, res) => {
 			{
 				$lookup: {
 					from: "User",
-					localField: "userId",
+					localField: "serviceOrder.userId",
 					foreignField: "_id",
 					as: "user",
 				},
@@ -152,16 +153,24 @@ const getRequestedOrders = async (req, res) => {
 			{
 				$lookup: {
 					from: "Address",
-					localField: "userId",
+					localField: "serviceOrder.userId",
 					foreignField: "_id",
 					as: "address",
 				},
 			},
-			{ $unwind: "$address" },
+			{ $unwind: "$address" }
+		);
+
+		let [orders, totalItems] = await Promise.all([
+			ServiceOrderModel.aggregate(pipeline),
+			ServiceOrderModel.aggregate(pipelineCount),
 		]);
 
+		if (totalItems && totalItems.length) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Orders found";
-		res.json(new Response(RESPONSE.SUCCESS, { message, serviceOrders }));
+		res.json(new Response(RESPONSE.SUCCESS, { message, orders, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}

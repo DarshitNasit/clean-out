@@ -7,7 +7,7 @@ import ErrorText from "./ErrorText";
 import Pagination from "./Pagination";
 import ViewServiceBar from "./ViewServiceBar";
 import { RESPONSE } from "../enums";
-import { Axios, timeout } from "../utilities";
+import { Axios } from "../utilities";
 import { setError, getDataForHome } from "../redux/actions";
 
 function ServiceStore(props) {
@@ -110,15 +110,13 @@ function ServiceStore(props) {
 	}
 
 	function changeSortBy(value) {
+		setError("");
 		if (value === sortBy) return;
 		setSortBy(value);
 	}
 
-	function viewService(serviceId) {
-		history.push(`/viewService/${serviceId}`);
-	}
-
 	function toggleSubCategoryInput(subCategory) {
+		setError("");
 		setSubCategoriesInput((prev) => {
 			const result = { ...prev };
 			result[subCategory] = !result[subCategory];
@@ -209,7 +207,7 @@ function ServiceStore(props) {
 						</div>
 					</div>
 
-					<div className="flex flex-col align-center">
+					<div className="flex flex-row flex-wrap justify-around align-center">
 						{services.map((value) => {
 							const {
 								workerService,
@@ -222,17 +220,17 @@ function ServiceStore(props) {
 							return (
 								<div
 									key={value._id}
-									className="flex flex-row btn-white br-10 pl-10 width100 mt-10 mb-10 hover-pointer"
+									className="flex flex-row btn-white br-10 pl-10 width45 mt-10 mb-10 hover-pointer"
 									onClick={() =>
 										history.push(`/viewWorkerService/${workerService._id}`)
 									}
 								>
-									<div className="flex flex-row width70">
+									<div className="flex flex-row width80">
 										<div className="flex">
 											<img
 												src={`/images/${worker.profilePicture}`}
 												alt={workerUser.userName}
-												height="150px"
+												height="100px"
 												className="ml-auto mr-auto pt-10 pb-10"
 											/>
 										</div>
@@ -245,15 +243,11 @@ function ServiceStore(props) {
 												service.subCategories
 											)}
 											price={price}
-											className="p-0"
 										/>
 									</div>
 
-									<div className="flex flex-col align-center width30 pt-10 pb-10">
-										<Name
-											isVerified={worker.isVerified}
-											className="big-font-size"
-										>
+									<div className="flex flex-col align-center width20 mt-auto mb-auto pb-10">
+										<Name isVerified={worker.isVerified}>
 											{workerUser.userName}
 										</Name>
 
@@ -267,9 +261,7 @@ function ServiceStore(props) {
 											<StarIcon className="violet" />
 											<p className="ml-10">[{workerService.ratingCount}]</p>
 										</div>
-										<p className="mt-auto">
-											Ordered : {workerService.orderedCount}
-										</p>
+										<p className="">Ordered : {workerService.orderedCount}</p>
 									</div>
 								</div>
 							);

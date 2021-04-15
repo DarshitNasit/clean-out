@@ -158,6 +158,9 @@ select {
 .hover-pointer:hover {
 	cursor: pointer;
 }
+.hover-block:hover {
+	cursor: not-allowed;
+}
 
 .top {
 	top: 0;
@@ -183,6 +186,9 @@ select {
 }
 .width40 {
 	width: 40%;
+}
+.width45 {
+	width: 45%;
 }
 .width50 {
 	width: 50%;
@@ -211,6 +217,9 @@ select {
 }
 .height-auto {
 	height: auto;
+}
+.height-fit {
+	height: fit-content;
 }
 
 .min-h80 {
@@ -389,4 +398,10 @@ select {
 }
 .p-auto {
 	padding: auto;
+}
+
+.shadow {
+	box-shadow: rgba(0, 0, 0, 0.09) 0px 2px 1px, rgba(0, 0, 0, 0.09) 0px 4px 2px,
+		rgba(0, 0, 0, 0.09) 0px 8px 4px, rgba(0, 0, 0, 0.09) 0px 16px 8px,
+		rgba(0, 0, 0, 0.09) 0px 32px 16px;
 }

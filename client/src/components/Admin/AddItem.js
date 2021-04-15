@@ -3,22 +3,22 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import { connect } from "react-redux";
 import * as Yup from "yup";
 
-import ErrorText from "./ErrorText";
-import ImageInput from "./ImageInput";
-import { ROLE, RESPONSE } from "../enums";
-import { Axios, buildFormData } from "../utilities";
-import { setError } from "../redux/actions";
+import ErrorText from "../ErrorText";
+import ImageInput from "../ImageInput";
+import { ROLE, RESPONSE } from "../../enums";
+import { Axios, buildFormData } from "../../utilities";
+import { setError } from "../../redux/actions";
 
 const initialValues = { itemName: "", price: "", description: "" };
 
-const onSubmit = async (values, setError, history, user, itemImage) => {
+const onSubmit = async (values, setError, history, userId, itemImage) => {
 	setError(null);
 	if (itemImage.itemImage === null || itemImage.itemImage === "") {
 		return itemImage.setItemImageError("Required");
 	}
 
 	const { formData, headers } = buildFormData({ ...values, itemImage: itemImage.itemImage });
-	const res = await Axios.POST(`/item/${user._id}`, formData, headers);
+	const res = await Axios.POST(`/item/${userId}`, formData, headers);
 	const data = res.data;
 
 	if (res.success === RESPONSE.FAILURE) setError(data.message);
@@ -32,14 +32,15 @@ const validationSchema = Yup.object({
 });
 
 function AddItem(props) {
-	const { history, auth, error } = props;
+	const { history, match, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
 	const [itemImage, setItemImage] = useState("");
 	const [itemImageError, setItemImageError] = useState(null);
 
 	useEffect(() => {
-		if (auth.user.role !== ROLE.SHOPKEEPER) history.goBack();
+		if (!userId) return history.goBack();
 	}, []);
 
 	useEffect(() => {
@@ -48,6 +49,7 @@ function AddItem(props) {
 	}, [itemImage]);
 
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		setItemImageError(null);
 		setItemImage(files.length ? files[0] : null);
 	}, []);
@@ -60,7 +62,7 @@ function AddItem(props) {
 				initialValues={initialValues}
 				validationSchema={validationSchema}
 				onSubmit={(values) =>
-					onSubmit(values, setError, history, auth.user, {
+					onSubmit(values, setError, history, userId, {
 						itemImage,
 						setItemImageError,
 					})
@@ -106,7 +108,6 @@ function AddItem(props) {
 
 function mapStateToProps(state) {
 	return {
-		auth: state.auth,
 		error: state.error,
 	};
 }

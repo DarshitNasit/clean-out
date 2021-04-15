@@ -16,13 +16,15 @@ function Canvas({ captureImage, toggleCamera }) {
 				videoPlayerRef.current.onloadedmetadata = () => {
 					videoPlayerRef.current.play();
 				};
+				window.localStream = stream;
 			})
 			.catch((err) => {
 				console.log(err);
 			});
 
 		return () => {
-			videoPlayerRef.current.srcObject.getTracks()[0].stop();
+			window.localStream.getTracks().map((track) => track.stop());
+			// videoPlayerRef.current.srcObject.getTracks()[0].stop();
 		};
 	}, []);
 

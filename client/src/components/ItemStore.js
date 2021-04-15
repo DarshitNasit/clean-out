@@ -43,6 +43,7 @@ function ItemStore(props) {
 	}
 
 	async function searchItem(event) {
+		setError("");
 		event.preventDefault();
 		getItems(1);
 	}
@@ -53,6 +54,7 @@ function ItemStore(props) {
 	}
 
 	function viewItem(itemId) {
+		setError("");
 		history.push(`/viewItem/${itemId}`);
 	}
 

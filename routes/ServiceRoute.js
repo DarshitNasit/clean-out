@@ -4,6 +4,7 @@ const {
 	getWorkerServiceWithRatings,
 	getServiceCount,
 	getServices,
+	getOnlyWorkerService,
 	getWorkerServicesForStore,
 	addService,
 	updateService,
@@ -17,6 +18,9 @@ const {
 // body -> {q:pincode q:subCategories, q:sortBy, q:page, q:serviceCategory}
 // resp -> {success, message, services, totalItems}
 router.get("/store", getWorkerServicesForStore);
+// body -> {q:workerId, q:serviceId}
+// resp -> {success, message, workerService}
+router.get("/onlyWorkerService", getOnlyWorkerService);
 // body -> {}
 // resp -> {success, message, service}
 router.get("/:serviceId", getService);
@@ -26,8 +30,8 @@ router.get("/workerService/:workerServiceId", getWorkerServiceWithRatings);
 // body -> {}
 // resp -> {success, message, serviceCount}
 router.get("/count/:serviceProviderId", getServiceCount);
-// body -> {q:lastKey}
-// resp -> {success, message, services}
+// body -> {q:page}
+// resp -> {success, message, services, totalItems}
 router.get("/services/:serviceProviderId", getServices);
 
 /**

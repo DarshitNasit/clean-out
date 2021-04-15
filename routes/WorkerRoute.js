@@ -24,8 +24,8 @@ router.get("/shopkeeperRequest/:workerId", getShopkeeperRequest);
 // body -> {}
 // resp -> {success, message, workerUser, address, worker, shopkeeperUser?, serviceOrders, itemOrders}
 router.get("/withOrders/:workerId", getWorkerWithOrders);
-// body -> {lastKey}
-// resp -> {success, message, serviceOrders}
+// body -> {q:page}
+// resp -> {success, message, orders, totalItems}
 router.get("/requestedOrders/:workerId", getRequestedOrders);
 
 /**w

@@ -116,12 +116,13 @@ function ViewServiceOrder(props) {
 						<p className="bold large-font-size ml-10 mt-20">Service Order</p>
 
 						<div
-							className="flex flex-row btn-white br-10 mt-10 pl-10 pr-10"
+							className="flex flex-row btn-white br-10 mt-10 pl-10 pr-10 hover-pointer"
 							style={{
 								boxShadow: `rgba(0, 0, 0, 0.09) 0px 2px 1px, rgba(0, 0, 0, 0.09) 0px 4px 2px,
 		rgba(0, 0, 0, 0.09) 0px 8px 4px, rgba(0, 0, 0, 0.09) 0px 16px 8px,
 		rgba(0, 0, 0, 0.09) 0px 32px 16px`,
 							}}
+							onClick={() => history.push(`/viewWorkerService/${workerService._id}`)}
 						>
 							{serviceOrder.userId === auth.user._id && (
 								<>
@@ -138,12 +139,13 @@ function ViewServiceOrder(props) {
 										<ViewServiceBar
 											serviceName={service.serviceName}
 											serviceCategory={serviceOrder.serviceCategory}
+											description={service.description}
 											subCategories={parseSubCategoryNames(
 												serviceOrder.metaData
 											)}
 											price={serviceOrder.price}
 											status={serviceOrder.status}
-											className="p-0"
+											className="p-10"
 										/>
 									</div>
 
@@ -163,17 +165,20 @@ function ViewServiceOrder(props) {
 								</>
 							)}
 
-							{serviceOrder.workerId === auth.user._id && (
+							{[serviceOrder.workerId, serviceOrder.shopkeeperId].includes(
+								auth.user._id
+							) && (
 								<>
 									<ViewServiceBar
 										serviceName={service.serviceName}
+										description={service.description}
 										serviceCategory={serviceOrder.serviceCategory}
 										subCategories={parseSubCategoryNames(serviceOrder.metaData)}
 										price={serviceOrder.price}
 										status={serviceOrder.status}
-										className="p-0"
+										className="p-10"
 									/>
-									<div className="mt-10 width30 ml-20 flex flex-col">
+									<div className="mt-10 width30 ml-auto flex flex-col">
 										<p className="big-font-size bold">{user.userName}</p>
 										<p className="small-font-size">{user.phone}</p>
 										<p className="small-font-size">
@@ -252,7 +257,10 @@ function ViewServiceOrder(props) {
 									</button>
 									<button
 										className="btn btn-danger ml-10"
-										disabled={serviceOrder.status === STATUS.DELIVERED}
+										disabled={
+											serviceOrder.status === STATUS.DELIVERED ||
+											serviceOrder.status === STATUS.CANCELLED
+										}
 										onClick={cancelOrder}
 									>
 										Cancel Order

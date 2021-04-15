@@ -13,6 +13,8 @@ const UserSchema = new mongoose.Schema(
 	{ versionKey: false }
 );
 
+UserSchema.index({ userName: "text" });
+
 const UserModel = mongoose.model("User", UserSchema, "User");
 UserModel.ensureIndexes().catch((error) => console.log(error));
 

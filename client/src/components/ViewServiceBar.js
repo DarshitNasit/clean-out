@@ -9,14 +9,18 @@ function ViewServiceBar(props) {
 		price,
 		workerName,
 		status,
+		onNameClick,
 		className,
 		...rest
 	} = props;
 
 	return (
-		<div className={`flex flex-col width90 ml-auto mr-auto br-10 p-10 ${className}`} {...rest}>
+		<div className={`flex flex-col br-10 ${className}`} {...rest}>
 			<div className="flex flex-row">
-				<p className="bold">
+				<p
+					className={`bold ${onNameClick ? "hover-pointer" : ""}`}
+					onClick={onNameClick ? () => onNameClick() : () => {}}
+				>
 					{serviceName} [{serviceCategory}]
 				</p>
 				{workerName && <p className="ml-auto">{workerName}</p>}

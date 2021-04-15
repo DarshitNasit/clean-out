@@ -21,11 +21,11 @@ router.get("/:shopkeeperId", getShopkeeperById);
 // body -> {}
 // resp -> {success, message, shopkeeperUser, address, shopkeeper, serviceOrders, itemOrders}
 router.get("/withOrders/:shopkeeperId", getShopkeeperWithOrders);
-// body -> {q:lastKey}
-// resp -> {success, message, workers}
+// body -> {q:page}
+// resp -> {success, message, workers, totalItems}
 router.get("/workers/:shopkeeperId", getWorkers);
-// body -> {q:lastKeyServiceOrder, q:lastKeyItemOrder}
-// resp -> {success, message, itemOrders, serviceOrders}
+// body -> {q:page}
+// resp -> {success, message, orders, totalItems}
 router.get("/requestedOrders/:shopkeeperId", getRequestedOrders);
 
 /**

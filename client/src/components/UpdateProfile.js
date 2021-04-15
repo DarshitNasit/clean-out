@@ -14,15 +14,22 @@ let initialValues = {};
 const onSubmit = async (values, setError, history, user, profilePicture, proofs) => {
 	setError(null);
 	const resource =
-		user.role === ROLE.USER ? "user" : user.role === ROLE.WORKER ? "worker" : "shopkeeper";
+		user.role === ROLE.WORKER
+			? "worker"
+			: user.role === ROLE.SHOPKEEPER
+			? "shopkeeper"
+			: "user";
 
 	let res, data;
-	if (user.role === ROLE.USER) res = await Axios.PUT(`/${resource}/${user._id}`, values);
-	else {
-		data = { ...values, pincodes: arrayToString(values.pincodes), profilePicture, proofs };
+	if (user.role === ROLE.WORKER || user.role === ROLE.SHOPKEEPER) {
+		data = { ...values, proofs };
+		if (user.role === ROLE.WORKER) {
+			data.profilePicture = profilePicture;
+			data.pincodes = arrayToString(values.pincodes);
+		}
 		const { formData, headers } = buildFormData(data);
 		res = await Axios.PUT(`/${resource}/${user._id}`, formData, headers);
-	}
+	} else res = await Axios.PUT(`/${resource}/${user._id}`, values);
 
 	data = res.data;
 	if (res.success === RESPONSE.SUCCESS) history.goBack();
@@ -43,15 +50,12 @@ const validationSchema = Yup.object({
 	pincode: Yup.string().required("Required").length(6, "Invalid pincode"),
 	city: Yup.string().required("Required"),
 	state: Yup.string().required("Required"),
-	pincodes: Yup.array()
-		.of(
-			Yup.number()
-				.min(100000, "Invalid pincode")
-				.max(999999, "Invalid pincode")
-				.required("Required")
-				.typeError("Invalid pincode")
-		)
-		.min(1, "At least one pincode is required"),
+	pincodes: Yup.array().of(
+		Yup.number()
+			.min(100000, "Invalid pincode")
+			.max(999999, "Invalid pincode")
+			.typeError("Invalid pincode")
+	),
 	shopName: Yup.string(),
 });
 
@@ -101,6 +105,7 @@ function UpdateProfile(props) {
 	}, [location.pathname]);
 
 	const onFileUpload = useCallback((name, files) => {
+		setError("");
 		if (name === "profilePicture") {
 			setProfilePicture(files.length ? files[0] : null);
 		} else if (files.length) {
@@ -119,7 +124,7 @@ function UpdateProfile(props) {
 		<div className="card_container">
 			{!loading && (
 				<>
-					<h2 className="temp-white mt-20 mb-10">Register in to Clean Out</h2>
+					<h2 className="temp-white mt-20 mb-10">Update Profile</h2>
 					{error.error ? <ErrorText>{error.error}</ErrorText> : null}
 					<Formik
 						initialValues={initialValues}
@@ -243,7 +248,6 @@ function UpdateProfile(props) {
 															form,
 														} = fieldArrayProps;
 														const { pincodes } = form.values;
-														console.log(pincodes);
 
 														return (
 															<div className="flex flex-col">
@@ -270,6 +274,7 @@ function UpdateProfile(props) {
 																					paddingLeft:
 																						"5px",
 																				}}
+																				validate={required}
 																			/>
 																			<button
 																				type="button"

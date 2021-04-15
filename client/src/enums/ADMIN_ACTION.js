@@ -1,5 +1,0 @@
-const ADMIN_ACTION = {
-	SET_TARGET_USER: "SET_TARGET_USER",
-};
-
-export default ADMIN_ACTION;

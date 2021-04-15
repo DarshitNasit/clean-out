@@ -2,15 +2,16 @@ import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 import ClearRoundedIcon from "@material-ui/icons/ClearRounded";
 
-import Product from "./Product";
-import ErrorText from "./ErrorText";
-import { setError } from "../redux/actions";
-import { RESPONSE, ROLE } from "../enums";
-import { Axios } from "../utilities";
+import Product from "../Product";
+import ErrorText from "../ErrorText";
+import { setError } from "../../redux/actions";
+import { RESPONSE, ROLE } from "../../enums";
+import { Axios, coadminFirewall } from "../../utilities";
 
 function Cart(props) {
-	const { history, location, auth, error } = props;
+	const { history, location, match, auth, error } = props;
 	const { setError } = props;
+	const userId = match.params.userId;
 
 	const [count, setCount] = useState(0);
 	const [price, setPrice] = useState(0);
@@ -18,33 +19,34 @@ function Cart(props) {
 	const [loading, setLoading] = useState(false);
 
 	useEffect(() => {
-		getCartItemPacks();
-		async function getCartItemPacks() {
-			const res = await Axios.GET(`/cart/${auth.user._id}`);
-			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-
-			const array = res.data.cartItemPacks;
-			setCartItemPacks(array || []);
-			setCount(array.reduce((total, curr) => total + curr.count, 0));
-			setPrice(array.reduce((total, curr) => total + curr.count * curr.item.price, 0));
-			setLoading(false);
-		}
-
+		if (!userId) return history.goBack();
+		coadminFirewall(auth, userId, history, setError, getCartItemPacks);
 		return () => {
 			setLoading(true);
 		};
 	}, [location.pathname]);
 
+	async function getCartItemPacks() {
+		const res = await Axios.GET(`/cart/${userId}`);
+		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
+
+		const array = res.data.cartItemPacks;
+		setCartItemPacks(array || []);
+		setCount(array.reduce((total, curr) => total + curr.count, 0));
+		setPrice(array.reduce((total, curr) => total + curr.count * curr.item.price, 0));
+		setLoading(false);
+	}
+
 	async function placeOrder() {
 		setError("");
-		const res = await Axios.POST(`/cart/placeOrder/${auth.user._id}`);
+		const res = await Axios.POST(`/cart/placeOrder/${userId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
-		history.push(`/viewOrder/${res.data.id}`);
+		history.push(`/admin/viewItemOrder/${res.data.id}`);
 	}
 
 	async function clearCart() {
 		setError("");
-		const res = await Axios.DELETE(`/cart/${auth.user._id}`);
+		const res = await Axios.DELETE(`/cart/${userId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		setCartItemPacks([]);
 	}
@@ -83,6 +85,7 @@ function Cart(props) {
 	}
 
 	async function changeCartItemPackCount(id, value) {
+		setError("");
 		const res = await Axios.PUT(`/cart/${id}`, { value });
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 	}
@@ -108,7 +111,7 @@ function Cart(props) {
 															item={item}
 															onClick={() =>
 																history.push(
-																	`/viewItem/${item._id}`
+																	`/admin/viewItem/${item._id}`
 																)
 															}
 														/>

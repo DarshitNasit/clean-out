@@ -33,6 +33,23 @@ const getService = async (req, res) => {
 	}
 };
 
+const getOnlyWorkerService = async (req, res) => {
+	try {
+		const workerId = req.query.workerId;
+		const serviceId = req.query.serviceId;
+		const workerService = await WorkerServiceModel.findOne({ workerId, serviceId });
+		if (!workerService) {
+			const message = "Worker service not found";
+			return res.json(new Response(RESPONSE.FAILURE, { message }));
+		}
+
+		const message = "Found worker service";
+		res.json(new Response(RESPONSE.SUCCESS, { message, workerService }));
+	} catch (error) {
+		handleError(error);
+	}
+};
+
 const getWorkerServiceWithRatings = async (req, res) => {
 	try {
 		const workerServiceId = req.params.workerServiceId;
@@ -87,17 +104,27 @@ const getServiceCount = async (req, res) => {
 const getServices = async (req, res) => {
 	try {
 		const serviceProviderId = req.params.serviceProviderId;
-		const lastKey = req.query.lastKey || null;
+		const page = req.query.page;
 
-		const query = { serviceProviderId: mongoose.Types.ObjectId(serviceProviderId) };
-		if (lastKey) query._id = { $gt: mongoose.Types.ObjectId(lastKey) };
-		const services = await ServiceModel.aggregate([
-			{ $match: query },
-			{ $limit: Number(process.env.LIMIT_SERVICES) },
+		const pipeline = [
+			{ $match: { serviceProviderId: mongoose.Types.ObjectId(serviceProviderId) } },
+		];
+		const pipelineCount = [...pipeline, { $count: "totalItems" }];
+		pipeline.push(
+			{ $skip: Number(process.env.LIMIT_SERVICES) * (page - 1) },
+			{ $limit: Number(process.env.LIMIT_SERVICES) }
+		);
+
+		let [services, totalItems] = await Promise.all([
+			ServiceModel.aggregate(pipeline),
+			ServiceModel.aggregate(pipelineCount),
 		]);
 
+		if (totalItems && totalItems.length > 0) totalItems = totalItems[0].totalItems;
+		else totalItems = 0;
+
 		const message = "Found services";
-		res.json(new Response(RESPONSE.SUCCESS, { message, services }));
+		res.json(new Response(RESPONSE.SUCCESS, { message, services, totalItems }));
 	} catch (error) {
 		handleError(error);
 	}
@@ -139,7 +166,6 @@ const getWorkerServicesForStore = async (req, res) => {
 		];
 
 		subCategories.forEach((subCategory) => {
-			console.log(subCategory);
 			pipeline.push({
 				$match: {
 					"service.subCategories": {
@@ -349,7 +375,8 @@ const deleteService = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const serviceProviderUser = await UserModel.findById(service.serviceProviderId);
+		const serviceProviderId = service.serviceProviderId;
+		const serviceProviderUser = await UserModel.findById(serviceProviderId);
 		if (!serviceProviderUser) {
 			const message = "Service provider not found";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
@@ -415,16 +442,16 @@ const bookService = async (req, res) => {
 		serviceOrder.price = req.body.price;
 		serviceOrder.metaData = req.body.metaData;
 		serviceOrder.serviceCategory = service.serviceCategory;
-
 		workerService.orderedCount++;
-		await Promise.all([serviceOrder.save(), workerService.save()]);
 
 		const targets = [user.phone, workerUser.phone];
 		if (worker.isDependent === "true") {
 			const shopkeeperUser = await ShopkeeperModel.findById(worker.shopkeeperId);
+			serviceOrder.shopkeeperId = shopkeeperUser._id;
 			targets.push(shopkeeperUser.phone);
 		}
 
+		await Promise.all([serviceOrder.save(), workerService.save()]);
 		message = `Order placed with total price : ${serviceOrder.price}`;
 		sendNotifications(message, targets, NOTIFICATION.PLACED_ORDER);
 
@@ -437,6 +464,7 @@ const bookService = async (req, res) => {
 
 module.exports = {
 	getService,
+	getOnlyWorkerService,
 	getWorkerServiceWithRatings,
 	getServiceCount,
 	getServices,

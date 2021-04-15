@@ -4,7 +4,7 @@ import StarIcon from "@material-ui/icons/Star";
 
 import ErrorText from "./ErrorText";
 import FeedbackForm from "./FeedbackForm";
-import { RESPONSE } from "../enums";
+import { ROLE, RESPONSE } from "../enums";
 import { Axios } from "../utilities";
 import { setError } from "../redux/actions";
 
@@ -34,7 +34,7 @@ function ViewItem(props) {
 			if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 
 			setItem(res.data.item);
-			if (auth.isAuthenticated)
+			if (auth.isAuthenticated && ![ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role))
 				setRatings(res.data.ratings.filter((rating) => rating.userId !== auth.user._id));
 			else setRatings(res.data.ratings);
 			setLoading(false);
@@ -99,16 +99,18 @@ function ViewItem(props) {
 							<div className="ml-10">[{item.ratingCount}]</div>
 						</div>
 
-						{auth.isAuthenticated && item.shopkeeperId === auth.user._id && (
-							<div className="buttons mt-10">
-								<button className="btn btn-success" onClick={editItem}>
-									Edit
-								</button>
-								<button className="btn btn-danger ml-10" onClick={deleteItem}>
-									Delete
-								</button>
-							</div>
-						)}
+						{auth.isAuthenticated &&
+							(item.shopkeeperId === auth.user._id ||
+								[ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role)) && (
+								<div className="buttons mt-10">
+									<button className="btn btn-success" onClick={editItem}>
+										Edit
+									</button>
+									<button className="btn btn-danger ml-10" onClick={deleteItem}>
+										Delete
+									</button>
+								</div>
+							)}
 
 						{auth.isAuthenticated && item.shopkeeperId !== auth.user._id && (
 							<FeedbackForm
