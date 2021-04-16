@@ -117,17 +117,17 @@ function ViewProfile(props) {
 	}
 
 	function addItem() {
-		history("");
+		setError("");
 		history.push(`/admin/addItem/${userId}`);
 	}
 
 	function addService() {
-		history("");
+		setError("");
 		history.push(`/admin/addService/${userId}`);
 	}
 
 	function viewCart() {
-		history("");
+		setError("");
 		history.push(`/admin/cart/${userId}`);
 	}
 
@@ -137,7 +137,7 @@ function ViewProfile(props) {
 	}
 
 	async function toggleCoadmin() {
-		history("");
+		setError("");
 		const res = await Axios.PUT(`/admin/toggleCoadmin`, { userId });
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 		setUser((prev) => {

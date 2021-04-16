@@ -7,7 +7,8 @@
 		"start": "cross-env APP_ENV=production node server.js",
 		"dev": "concurrently \"npm run client\" \"npm run server\"",
 		"server": "cross-env APP_ENV=development nodemon --ignore test.js server.js",
-		"client": "npm start --prefix client"
+		"client": "npm start --prefix client",
+		"heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix client && npm run build --prefix client"
 	},
 	"author": "Darshit Nasit",
 	"license": "ISC",

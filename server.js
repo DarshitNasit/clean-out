@@ -49,6 +49,15 @@ app.use(cors());
 app.use(require("./routes"));
 
 /**
+ * Connect to react app
+ */
+if (process.env.APP_ENV === "production") {
+	app.get("*", (req, res) => {
+		res.sendFile(path.resolve(__dirname, "public", "build", "index.html"));
+	});
+}
+
+/**
  * Verifying folders
  */
 if (!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads");
