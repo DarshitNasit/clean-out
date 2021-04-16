@@ -4,7 +4,7 @@
 	"description": "Clean Out",
 	"main": "server.js",
 	"scripts": {
-		"start": "cross-env APP_ENV=production node server.js",
+		"start": "cross-env APP_ENV=production DATABASE=clean-out DB_SERVER=mongodb+srv://sentinel_lord:mongodb@cluster0.fltjs.mongodb.net/clean-out?retryWrites=true DATE_FORMAT=YYYY-MM-DD DEFAULT_RATING=2.5 SESSION_SECRET=clean-out-secret SESSION_EXPIRE=600000 LIMIT_RATING=10 LIMIT_SERVICES=10 LIMIT_ITEMS=10 LIMIT_WORKERS=10 LIMIT_ORDERS=10 LIMIT_ADMIN=12 ADMIN='userName: admin; phone: 1111111111; password: pass' ADMIN_ADDRESS='society: A-105, My society; area: My area; city: My city; state: My state; pincode: 111111' PORT=8000 node server.js",
 		"dev": "concurrently \"npm run client\" \"npm run server\"",
 		"server": "cross-env APP_ENV=development nodemon --ignore test.js server.js",
 		"client": "npm start --prefix client",
