@@ -77,6 +77,6 @@ require("./utilities/cronJobs")();
 /**
  * Listen requests
  */
-app.listen(process.env.PORT, () =>
+app.listen(process.env.PORT || 5000, () =>
 	console.log(`App is running in ${process.env.APP_ENV} environment on port ${process.env.PORT}`)
 );
