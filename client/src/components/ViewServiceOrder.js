@@ -285,6 +285,10 @@ function ViewServiceOrder(props) {
 										<button
 											className="btn btn-danger ml-10"
 											onClick={cancelOrder}
+											disabled={
+												serviceOrder.status === STATUS.DELIVERED ||
+												serviceOrder.status === STATUS.CANCELLED
+											}
 										>
 											Cancel Order
 										</button>
@@ -325,6 +329,10 @@ function ViewServiceOrder(props) {
 										<button
 											className="btn btn-danger mr-auto"
 											onClick={cancelOrder}
+											disabled={
+												serviceOrder.status === STATUS.DELIVERED ||
+												serviceOrder.status === STATUS.CANCELLED
+											}
 										>
 											Cancel Order
 										</button>

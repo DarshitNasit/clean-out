@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { connect } from "react-redux";
 import ClearRoundedIcon from "@material-ui/icons/ClearRounded";
 
-import Product from "./Product";
-import ErrorText from "./ErrorText";
-import { RESPONSE, ROLE, STATUS } from "../enums";
-import { Axios } from "../utilities";
-import { setError } from "../redux/actions";
+import Product from "../Product";
+import ErrorText from "../ErrorText";
+import { RESPONSE, ROLE, STATUS } from "../../enums";
+import { Axios } from "../../utilities";
+import { setError } from "../../redux/actions";
 
 function ViewItemOrder(props) {
 	const { history, location, match, auth, error } = props;
@@ -36,7 +36,8 @@ function ViewItemOrder(props) {
 		if (!res.data.orderItemPacks.length) history.goBack();
 		if (
 			auth.user._id !== res.data.user._id &&
-			auth.user._id !== res.data.orderItemPacks[0].shopkeeperId
+			auth.user._id !== res.data.orderItemPacks[0].shopkeeperId &&
+			![ROLE.ADMIN, ROLE.COADMIN].includes(auth.user.role)
 		)
 			history.goBack();
 

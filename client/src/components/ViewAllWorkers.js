@@ -61,14 +61,14 @@ function ViewAllWorkers(props) {
 			{!loading && (
 				<>
 					{error.error && <ErrorText>{error.error}</ErrorText>}
-					<div className="width80 ml-auto mr-auto flex flex-col">
-						<div className="flex flex-row p-10 align-center">
+					<div className="width90 ml-auto mr-auto flex flex-col">
+						<div className="flex flex-row p-10 align-center mt-10">
 							<p className="bold large-font-size">Workers</p>
 							<button className="btn btn-violet ml-auto" onClick={addWorker}>
 								Add Workers
 							</button>
 						</div>
-						<div className="flex flex-row flex-wrap justify-around">
+						<div className="flex flex-row flex-wrap justify-around mt-10">
 							{workers.map((value, index) => {
 								const { worker, workerUser } = value;
 
@@ -76,16 +76,17 @@ function ViewAllWorkers(props) {
 									<>
 										<div
 											key={workerUser._id}
-											className="flex flex-row btn-light br-10 shadow mr-10 ml-10 mt-10 mb-10"
+											className="flex flex-row btn-light br-10 shadow p-10"
+											style={{ maxWidth: "30%", height: "fit-content" }}
 										>
-											<div className="width60 m-auto p-5">
+											<div className="m-auto">
 												<img
 													src={`/images/${worker.profilePicture}`}
 													alt={workerUser.userName}
 													height="150px"
 												/>
 											</div>
-											<div className="width40 flex flex-col ml-auto mr-auto p-10">
+											<div className="flex flex-col mr-auto ml-10">
 												<Name
 													className="bold large-font-size"
 													isVerified={worker.isVerified}
@@ -93,20 +94,33 @@ function ViewAllWorkers(props) {
 													{workerUser.userName}
 												</Name>
 												<p className="">{workerUser.phone}</p>
-												<button
-													className="btn btn-success mt-10"
-													onClick={() =>
-														history.push(`/viewWorker/${value._id}`)
-													}
-												>
-													View
-												</button>
-												<button
-													className="btn btn-danger mt-5"
-													onClick={() => removeWorker(index)}
-												>
-													Remove
-												</button>
+												<p className="small-font-size mt-5">
+													Preferred Locations :{" "}
+													{worker.pincodes.map((pincode, indexIn) => (
+														<>
+															{pincode.pincode}
+															{indexIn === worker.pincodes.length - 1
+																? ""
+																: ", "}
+														</>
+													))}
+												</p>
+												<div className="flex flex-row flex-wrap justify-around">
+													<button
+														className="btn btn-success mt-10"
+														onClick={() =>
+															history.push(`/viewWorker/${value._id}`)
+														}
+													>
+														View
+													</button>
+													<button
+														className="btn btn-danger mt-10"
+														onClick={() => removeWorker(index)}
+													>
+														Remove
+													</button>
+												</div>
 											</div>
 										</div>
 									</>

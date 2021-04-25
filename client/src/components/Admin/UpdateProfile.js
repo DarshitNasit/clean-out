@@ -27,6 +27,7 @@ const onSubmit = async (values, setError, history, user, profilePicture, proofs)
 			: "user";
 
 	let res, data;
+	values = { ...values, isAdmin: true };
 	if (user.role === ROLE.WORKER || user.role === ROLE.SHOPKEEPER) {
 		data = { ...values, proofs };
 		if (user.role === ROLE.WORKER) {
@@ -48,7 +49,6 @@ const validationSchema = Yup.object({
 		.required("Required")
 		.matches(/^[0-9]+$/, "Must be only digits")
 		.length(10, "Must be 10 digits"),
-	password: Yup.string().required("Required"),
 	newPassword: Yup.string(),
 	confirmPassword: Yup.string(),
 	society: Yup.string().required("Required"),
@@ -96,7 +96,6 @@ function UpdateProfile(props) {
 		setUser(res.data.user);
 		initialValues.userName = res.data.user.userName;
 		initialValues.phone = res.data.user.phone;
-		initialValues.password = "";
 		initialValues.newPassword = "";
 		initialValues.confirmPassword = "";
 		initialValues.society = res.data.address.society;
@@ -157,12 +156,6 @@ function UpdateProfile(props) {
 										<label htmlFor="phone">Contact Number</label>
 										<Field type="text" id="phone" name="phone" />
 										<ErrorMessage name="phone" component={ErrorText} />
-									</div>
-
-									<div className="form-control">
-										<label htmlFor="password">Password</label>
-										<Field type="password" id="password" name="password" />
-										<ErrorMessage name="password" component={ErrorText} />
 									</div>
 
 									<div className="form-control">

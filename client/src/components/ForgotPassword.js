@@ -30,7 +30,7 @@ const onSubmit = async (values, setError, history, page) => {
 		const res = await Axios.POST("/user/resetPassword", data);
 		data = res.data;
 
-		if (res.success === RESPONSE.SUCCESS) history.push("/login");
+		if (res.success === RESPONSE.SUCCESS) history.goBack();
 		else setError(data.message);
 	}
 };

@@ -52,9 +52,7 @@ function ViewWorker(props) {
 		<div className="min-h80 btn-main flex flex-col">
 			{!loading && (
 				<>
-					{error.error && (
-						<ErrorText className="ml-auto mr-auto">{error.error}</ErrorText>
-					)}
+					{error.error && <ErrorText>{error.error}</ErrorText>}
 					<div className="flex flex-row width90 ml-auto mr-auto">
 						<div className="flex flex-col width40">
 							<div className="flex flex-row width90 mr-auto">

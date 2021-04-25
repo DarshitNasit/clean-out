@@ -103,12 +103,19 @@ function Cart(props) {
 									{cartItemPacks.map((cartItemPack, index) => {
 										const item = cartItemPack.item;
 										return (
-											<div key={cartItemPack._id} className="m-10">
+											<div
+												key={cartItemPack._id}
+												className="m-10"
+												style={{ maxWidth: "18%", textAlign: "center" }}
+											>
 												<div className="flex flex-row">
 													<div className="flex flex-col align-center">
 														<Product
 															className="hover-pointer"
 															item={item}
+															shopName={
+																cartItemPack.shopkeeper.shopName
+															}
 															onClick={() =>
 																history.push(
 																	`/admin/viewItem/${item._id}`

@@ -26,26 +26,6 @@ function ViewWorkerService(props) {
 
 	useEffect(() => {
 		getService();
-		async function getService() {
-			if (!workerServiceId) history.goBack();
-			else {
-				const res = await Axios.GET(`/service/workerService/${workerServiceId}`);
-				if (res.success === RESPONSE.FAILURE) setError(res.data.message);
-				else {
-					setWorkerUser(res.data.workerUser);
-					setWorker(res.data.worker);
-					setService(res.data.service);
-					setWorkerService(res.data.workerService);
-					if (auth.isAuthenticated)
-						setRatings(
-							res.data.ratings.filter((rating) => rating.userId !== auth.user._id)
-						);
-					else setRatings(res.data.ratings);
-					setLoading(false);
-				}
-			}
-		}
-
 		return () => {
 			setLoading(true);
 		};
@@ -73,6 +53,26 @@ function ViewWorkerService(props) {
 			setPrice(sum);
 		}
 	}, [service]);
+
+	async function getService() {
+		if (!workerServiceId) history.goBack();
+		else {
+			const res = await Axios.GET(`/service/workerService/${workerServiceId}`);
+			if (res.success === RESPONSE.FAILURE) setError(res.data.message);
+			else {
+				setWorkerUser(res.data.workerUser);
+				setWorker(res.data.worker);
+				setService(res.data.service);
+				setWorkerService(res.data.workerService);
+				if (auth.isAuthenticated)
+					setRatings(
+						res.data.ratings.filter((rating) => rating.userId !== auth.user._id)
+					);
+				else setRatings(res.data.ratings);
+				setLoading(false);
+			}
+		}
+	}
 
 	function handleChange(event, index) {
 		setError("");
@@ -271,7 +271,7 @@ function ViewWorkerService(props) {
 						)}
 
 						{auth.isAuthenticated &&
-							service.serviceProvider !== auth.user._id &&
+							service.serviceProviderId !== auth.user._id &&
 							workerService.workerId !== auth.user._id && (
 								<FeedbackForm
 									className="mt-20 mb-50"
@@ -279,6 +279,7 @@ function ViewWorkerService(props) {
 									auth={auth}
 									setError={setError}
 									target={"SERVICE"}
+									onFeedbackChange={getService}
 								/>
 							)}
 					</div>

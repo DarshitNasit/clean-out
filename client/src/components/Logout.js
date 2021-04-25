@@ -6,8 +6,10 @@ function Logout(props) {
 	const { history, isAuthenticated } = props;
 	const { logoutUser } = props;
 	useEffect(() => {
-		if (isAuthenticated) logoutUser(history);
-		else history.goBack();
+		if (isAuthenticated) {
+			logoutUser(history);
+			document.title = "Clean Out";
+		} else history.goBack();
 	}, []);
 
 	return null;

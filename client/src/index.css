@@ -22,6 +22,9 @@
 .black {
 	color: var(--black);
 }
+.success {
+	color: var(--success);
+}
 .danger {
 	color: var(--danger);
 }
@@ -210,6 +213,9 @@ select {
 }
 .width-auto {
 	width: auto;
+}
+.width-fit {
+	width: fit-content;
 }
 
 .height100 {

@@ -29,7 +29,7 @@ function ServiceStore(props) {
 	useEffect(() => {
 		if (!home.isLoaded) return getDataForHome(history);
 
-		const serCat = category || home.serviceCategories[0].category;
+		const serCat = serviceCategory || category || home.serviceCategories[0].category;
 		setServiceCategory(serCat);
 		formatSubCategories(serCat);
 
@@ -52,6 +52,13 @@ function ServiceStore(props) {
 	useEffect(() => {
 		if (!loading) getServices(1);
 	}, [subCategoriesInput]);
+
+	useEffect(() => {
+		if (!loading) {
+			getServices(1);
+			formatSubCategories(serviceCategory);
+		}
+	}, [serviceCategory]);
 
 	async function formatSubCategories(serCat) {
 		let array = {};
@@ -115,6 +122,11 @@ function ServiceStore(props) {
 		setSortBy(value);
 	}
 
+	function changeServiceCategory(event) {
+		setError("");
+		setServiceCategory(event.target.value);
+	}
+
 	function toggleSubCategoryInput(subCategory) {
 		setError("");
 		setSubCategoriesInput((prev) => {
@@ -135,7 +147,23 @@ function ServiceStore(props) {
 				<div className="flex flex-col ml-auto mr-auto mt-50 width90">
 					{error.error && <ErrorText>{error.error}</ErrorText>}
 					<div className="flex flex-row align-center">
-						<p className="bold large-font-size">{serviceCategory.toUpperCase()}</p>
+						<select
+							name="category"
+							style={{
+								fontSize: "1.5em",
+								backgroundColor: "var(--main)",
+								border: "none",
+								fontWeight: "bold",
+							}}
+							value={serviceCategory}
+							onChange={changeServiceCategory}
+						>
+							{home.serviceCategories.map((category) => (
+								<option value={category.category}>
+									{category.category.toUpperCase()}
+								</option>
+							))}
+						</select>
 						<div className="flex flex-row align-center ml-auto">
 							<p className="ml-auto mr-10">Sort By : </p>
 							<div
@@ -220,18 +248,18 @@ function ServiceStore(props) {
 							return (
 								<div
 									key={value._id}
-									className="flex flex-row btn-white br-10 pl-10 width45 mt-10 mb-10 hover-pointer"
+									className="flex flex-row btn-white br-10 pl-10 width45 mt-10 mb-10 hover-pointer p-10 shadow"
 									onClick={() =>
 										history.push(`/viewWorkerService/${workerService._id}`)
 									}
 								>
-									<div className="flex flex-row width80">
+									<div className="flex flex-row">
 										<div className="flex">
 											<img
 												src={`/images/${worker.profilePicture}`}
 												alt={workerUser.userName}
 												height="100px"
-												className="ml-auto mr-auto pt-10 pb-10"
+												className="ml-auto mr-10 pt-10 pb-10"
 											/>
 										</div>
 
@@ -246,13 +274,16 @@ function ServiceStore(props) {
 										/>
 									</div>
 
-									<div className="flex flex-col align-center width20 mt-auto mb-auto pb-10">
+									<div className="flex flex-col align-center width20 mt-auto mb-auto ml-10">
 										<Name isVerified={worker.isVerified}>
 											{workerUser.userName}
 										</Name>
 
 										{shopkeeper && (
-											<Name isVerified={shopkeeper.isVerified} className="">
+											<Name
+												isVerified={shopkeeper.isVerified}
+												className="small-font-size"
+											>
 												{shopkeeper.shopName}
 											</Name>
 										)}

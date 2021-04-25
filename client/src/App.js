@@ -44,9 +44,14 @@ import AdminViewService from "./components/Admin/ViewService";
 import AdminViewAllItems from "./components/Admin/ViewAllItems";
 import AdminUpdateService from "./components/Admin/UpdateService";
 import AdminUpdateProfile from "./components/Admin/UpdateProfile";
+import AdminViewItemOrder from "./components/Admin/ViewItemOrder";
 import AdminViewAllWorkers from "./components/Admin/ViewAllWorkers";
 import AdminViewAllServices from "./components/Admin/ViewAllServices";
 import AdminViewServiceOrder from "./components/Admin/ViewServiceOrder";
+import AdminServiceCategories from "./components/Admin/ServiceCategories";
+import AdminAddServiceCategory from "./components/Admin/AddServiceCategory";
+import AdminViewServiceCategory from "./components/Admin/ViewServiceCategory";
+import AdminUpdateServiceCategory from "./components/Admin/UpdateServiceCategory";
 import AdminViewAllRequestedOrders from "./components/Admin/ViewAllRequestedOrders";
 
 import { setUserFromStorage } from "./redux/actions";
@@ -113,6 +118,26 @@ function App() {
 					<AdminRoute path="/admin/addItem/:userId" exact component={AdminAddItem} />
 					<AdminRoute path="/admin/addWorker/:userId" exact component={AdminAddWorker} />
 					<AdminRoute
+						path="/admin/addServiceCategory"
+						exact
+						component={AdminAddServiceCategory}
+					/>
+					<AdminRoute
+						path="/admin/viewServiceCategory/:serviceCategoryId"
+						exact
+						component={AdminViewServiceCategory}
+					/>
+					<AdminRoute
+						path="/admin/updateServiceCategory/:serviceCategoryId"
+						exact
+						component={AdminUpdateServiceCategory}
+					/>
+					<AdminRoute
+						path="/admin/serviceCategories"
+						exact
+						component={AdminServiceCategories}
+					/>
+					<AdminRoute
 						path="/admin/viewService/:serviceId"
 						exact
 						component={AdminViewService}
@@ -131,6 +156,11 @@ function App() {
 						path="/admin/viewProfile/:userId"
 						exact
 						component={AdminViewProfile}
+					/>
+					<AdminRoute
+						path="/admin/viewItemOrder/:itemOrderId"
+						exact
+						component={AdminViewItemOrder}
 					/>
 					<AdminRoute
 						path="/admin/viewServiceOrder/:serviceOrderId"

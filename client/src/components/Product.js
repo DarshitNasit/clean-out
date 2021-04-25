@@ -6,16 +6,20 @@ function Product(props) {
 	const { shopName, className, ...rest } = props;
 
 	return (
-		<div className={`flex flex-col align-center ${className}`} {...rest}>
-			<img src={`/images/${itemImage}`} alt={itemName} height="180px" width="210px" />
+		<div
+			className={`flex flex-col align-center ${className}`}
+			style={{ textAlign: "center" }}
+			{...rest}
+		>
+			<img src={`/images/${itemImage}`} alt={itemName} height="180px" />
 			<p>{itemName}</p>
+			{shopName && <p>From : {shopName}</p>}
 			<p>Price : {price}</p>
 			<p>{isAvailable ? "In stock" : "Out of stock"}</p>
 			<div className="flex flex-row align-center">
 				<p>{ratingValue}</p>
 				<StarIcon className="violet" />
 			</div>
-			{shopName && <p>From : {shopName}</p>}
 			{orderedCount !== null && <p>Ordered : {orderedCount}</p>}
 		</div>
 	);

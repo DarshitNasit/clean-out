@@ -36,6 +36,15 @@ const getItemOrder = async (req, res) => {
 				},
 			},
 			{ $unwind: "$item" },
+			{
+				$lookup: {
+					from: "Shopkeeper",
+					localField: "item.shopkeeperId",
+					foreignField: "_id",
+					as: "shopkeeper",
+				},
+			},
+			{ $unwind: "$shopkeeper" },
 		];
 
 		const [user, address, orderItemPacks] = await Promise.all([

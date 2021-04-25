@@ -233,6 +233,7 @@ function ViewProfile(props) {
 												? "btn-danger"
 												: "btn-success"
 										}`}
+										hidden={user.role === ROLE.ADMIN}
 										onClick={toggleCoadmin}
 									>
 										{user.role === ROLE.COADMIN
@@ -307,10 +308,6 @@ function ViewProfile(props) {
 													`/admin/viewAllRequestedOrders/${userId}`
 												)
 											}
-											disabled={
-												(shopkeeper && shopkeeper.isVerified) ||
-												(worker && worker.isVerified)
-											}
 										>
 											Requested Orders
 										</button>
@@ -349,7 +346,7 @@ function ViewProfile(props) {
 									price={serviceOrder.serviceOrder.price}
 									workerName={serviceOrder.workerUser.userName}
 									status={serviceOrder.serviceOrder.status}
-									className="mt-10 btn-main hover-pointer"
+									className="mt-10 mb-10 btn-main hover-pointer p-10 ml-20 mr-20 shadow"
 									onClick={() =>
 										history.push(
 											`/admin/viewServiceOrder/${serviceOrder.serviceOrder._id}`
@@ -364,7 +361,7 @@ function ViewProfile(props) {
 								<ViewItemBar
 									key={itemOrder.itemOrder._id}
 									orderItemPacks={itemOrder.orderItemPacks}
-									className="mt-10 btn-main hover-pointer"
+									className="mt-10 btn-main hover-pointer shadow"
 									onClick={() =>
 										history.push(
 											`/admin/viewItemOrder/${itemOrder.itemOrder._id}`

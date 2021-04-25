@@ -1,13 +1,18 @@
+const fs = require("fs");
 const path = require("path");
 const sharp = require("sharp");
 const { promisify } = require("util");
 
 const handleError = require("./errorHandler");
-const unlinkAsync = promisify(require("fs").unlink);
+const unlinkAsync = promisify(fs.unlink);
 
 const deleteFiles = async (files, folder = "uploads") => {
 	files = files.map((file) => `public/${folder}/${file}`);
 	await Promise.all(files.map(async (file) => unlinkAsync(file)));
+};
+
+const renameFile = (filename, newFilename, folder = "uploads") => {
+	fs.renameSync(`public/${folder}/${filename}`, `public/${folder}/${newFilename}`);
 };
 
 const useSharp = async (files) => {
@@ -26,4 +31,4 @@ const useSharp = async (files) => {
 	}
 };
 
-module.exports = { deleteFiles, useSharp };
+module.exports = { deleteFiles, renameFile, useSharp };

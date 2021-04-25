@@ -58,15 +58,24 @@ if (process.env.APP_ENV === "production") {
 }
 
 /**
- * Verifying folders
+ * Verifying folders and images
  */
 if (!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads");
 if (!fs.existsSync("public/tempUploads")) fs.mkdirSync("public/tempUploads");
+fs.readdir("public/tempUploads", (err, files) => {
+	if (err) return console.log("Unable to scan directory: " + err);
+
+	files.forEach(function (file) {
+		const currentPath = path.join(__dirname, "public", "tempUploads", file);
+		const destinationPath = path.join(__dirname, "public", "uploads", file);
+		fs.copyFileSync(currentPath, destinationPath);
+	});
+});
 
 /**
  * Load necessary data
  */
-// require("./database/LoadServiceCategory")();
+require("./database/LoadServiceCategory")();
 require("./database/Admin")();
 
 /**

@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Response = require("../models/Response");
 const ItemModel = require("../models/Item");
 const UserModel = require("../models/User");
+const ShopkeeperModel = require("../models/Shopkeeper");
 const ItemOrderModel = require("../models/ItemOrder");
 const CartItemPackModel = require("../models/CartItemPack");
 const OrderItemPackModel = require("../models/OrderItemPack");
@@ -42,7 +43,8 @@ const getCartItems = async (req, res) => {
 			cartItemPacks.map(async (cartItemPack) => {
 				const itemId = cartItemPack.itemId;
 				const item = await ItemModel.findById(itemId);
-				return { ...cartItemPack._doc, item };
+				const shopkeeper = await ShopkeeperModel.findById(item.shopkeeperId);
+				return { ...cartItemPack._doc, item, shopkeeper };
 			})
 		);
 

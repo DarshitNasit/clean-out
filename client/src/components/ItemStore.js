@@ -6,7 +6,7 @@ import Product from "./Product";
 import ErrorText from "./ErrorText";
 import Pagination from "./Pagination";
 import { RESPONSE } from "../enums";
-import { Axios } from "../utilities";
+import { Axios, scrollToTop } from "../utilities";
 import { setError } from "../redux/actions";
 
 function ItemStore(props) {
@@ -35,11 +35,11 @@ function ItemStore(props) {
 		const res = await Axios.GET(`/item/store`, { sortBy, search, page: pageNumber });
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
 
-		console.log(res.data.items);
 		setTotalItems(res.data.totalItems);
 		setItems(res.data.items);
 		setPage(pageNumber);
 		setLoading(false);
+		scrollToTop();
 	}
 
 	async function searchItem(event) {
@@ -122,17 +122,21 @@ function ItemStore(props) {
 						</div>
 					</div>
 
-					<div className="flex flex-row flex-wrap justify-around align-center mt-20">
+					<div className="flex flex-row flex-wrap justify-around mt-20">
 						{items.map((item) => {
 							const itemId = item._id;
 							return (
-								<Product
-									key={itemId}
-									item={item}
-									onClick={() => viewItem(itemId)}
-									className="hover-pointer p-10"
-									shopName={item.shopkeeper.shopName}
-								/>
+								<>
+									<Product
+										key={itemId}
+										item={item}
+										onClick={() => viewItem(itemId)}
+										className="hover-pointer p-10 mt-10"
+										shopName={item.shopkeeper.shopName}
+										style={{ maxWidth: "18%", textAlign: "center" }}
+									/>
+									<hr />
+								</>
 							);
 						})}
 					</div>

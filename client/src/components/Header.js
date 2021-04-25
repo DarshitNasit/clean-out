@@ -1,22 +1,23 @@
-import React, { useState } from "react";
-import { withRouter, useLocation } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { withRouter, Link } from "react-router-dom";
 import { connect } from "react-redux";
 
 import ShoppingCartIcon from "@material-ui/icons/ShoppingCart";
 import AccountCircleIcon from "@material-ui/icons/AccountCircle";
 import NotificationsActiveIcon from "@material-ui/icons/NotificationsActive";
 import { RESPONSE, ROLE } from "../enums";
-import { Axios } from "../utilities";
+import { Axios, scrollToBottom } from "../utilities";
 import { setError } from "../redux/actions";
 
-const scrollToBottom = () =>
-	window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-
 function Header(props) {
-	const { history, auth } = props;
+	const { history, auth, location } = props;
 	const [request, setRequest] = useState(null);
 	const [notificationBar, setNotificationBar] = useState(false);
-	const location = useLocation();
+
+	useEffect(() => {
+		if (auth.isAuthenticated) document.title = `Clean Out (${auth.user.role})`;
+		else document.title = "Clean Out";
+	}, [auth.isAuthenticated, location.pathname]);
 
 	function handleClick(event) {
 		history.push(`/${event.target.name}`);
@@ -81,6 +82,14 @@ function Header(props) {
 							<button name="admin" className="white btn-black" onClick={handleClick}>
 								ADMIN
 							</button>
+						</li>
+					)}
+
+					{auth.isAuthenticated && auth.user.role === ROLE.ADMIN && (
+						<li>
+							<Link to="/admin/serviceCategories" className="white btn-black">
+								SERVICE CATEGORIES
+							</Link>
 						</li>
 					)}
 				</ul>

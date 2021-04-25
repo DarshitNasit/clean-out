@@ -15,4 +15,9 @@ const ServiceCategorySchema = mongoose.Schema(
 	{ versionKey: false }
 );
 
-module.exports = mongoose.model("ServiceCategory", ServiceCategorySchema, "ServiceCategory");
+const ServiceCategoryModel = mongoose.model(
+	"ServiceCategory",
+	ServiceCategorySchema,
+	"ServiceCategory"
+);
+module.exports = ServiceCategoryModel;

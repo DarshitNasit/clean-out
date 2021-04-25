@@ -149,6 +149,7 @@ const updateUser = async (req, res) => {
 		const userId = req.params.userId;
 		const { userName, phone, password, newPassword } = req.body;
 		const { society, area, pincode, city, state } = req.body;
+		const { isAdmin } = req.body;
 
 		const user = await UserModel.findById(userId);
 		if (!user) {
@@ -156,8 +157,8 @@ const updateUser = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const isMatch = await bcrypt.compare(password, user.password);
-		if (!isMatch) {
+		const isMatch = await bcrypt.compare(password || "", user.password);
+		if (!isMatch && !isAdmin) {
 			const message = "Password incorrect";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}

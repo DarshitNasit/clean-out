@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 
 const UserModel = require("../models/User");
 const ServiceModel = require("../models/Service");
-const ShopkeeperModel = require("../models/Shopkeeper");
 const WorkerModel = require("../models/Worker");
 const LocationModel = require("../models/Location");
 const ServiceOrderModel = require("../models/ServiceOrder");
@@ -446,7 +445,7 @@ const bookService = async (req, res) => {
 
 		const targets = [user.phone, workerUser.phone];
 		if (worker.isDependent === "true") {
-			const shopkeeperUser = await ShopkeeperModel.findById(worker.shopkeeperId);
+			const shopkeeperUser = await UserModel.findById(worker.shopkeeperId);
 			serviceOrder.shopkeeperId = shopkeeperUser._id;
 			targets.push(shopkeeperUser.phone);
 		}

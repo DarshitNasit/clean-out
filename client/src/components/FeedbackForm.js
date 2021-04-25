@@ -7,7 +7,7 @@ import { RESPONSE } from "../enums";
 
 function FeedbackForm(props) {
 	const { auth, targetId, target } = props;
-	const { setError } = props;
+	const { setError, onFeedbackChange } = props;
 	const [ratingId, setRatingId] = useState(null);
 	const [feedback, setFeedback] = useState(3);
 	const [description, setDescription] = useState("");
@@ -70,12 +70,13 @@ function FeedbackForm(props) {
 				setAdded(true);
 			}
 		}
+		onFeedbackChange();
 	}
 
 	return (
 		<div className={`feedback_form ${props.className}`}>
 			{!loading && (
-				<>
+				<div className="flex flex-col">
 					<p>Feedback</p>
 					<div className="feedback_form_stars">
 						{[...Array(5)].map((val, index) => (
@@ -107,9 +108,9 @@ function FeedbackForm(props) {
 							onClick={handleSubmit}
 						/>
 					</div>
-					{added && <p>Added feedback</p>}
-					{updated && <p>Updated feedback</p>}
-				</>
+					{added && <p className="ml-auto mr-auto mt-10 success">Added feedback</p>}
+					{updated && <p className="ml-auto mr-auto mt-10 success">Updated feedback</p>}
+				</div>
 			)}
 		</div>
 	);

@@ -325,6 +325,7 @@ const updateWorker = async (req, res) => {
 		const workerId = req.params.workerId;
 		const { userName, phone, password, newPassword } = req.body;
 		const { society, area, pincode, city, state } = req.body;
+		const { isAdmin } = req.body;
 		let pincodes = Array.from(new Set(stringToArray(req.body.pincodes)));
 		const files = req.files;
 		let profilePicture = null,
@@ -347,8 +348,8 @@ const updateWorker = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const isMatch = await bcrypt.compare(password, workerUser.password);
-		if (!isMatch) {
+		const isMatch = await bcrypt.compare(password || "", workerUser.password);
+		if (!isMatch && !isAdmin) {
 			if (profilePicture) await deleteFiles([profilePicture], "tempUploads");
 			if (proofs) await deleteFiles(proofs, "tempUploads");
 			const message = "Incorrect password";

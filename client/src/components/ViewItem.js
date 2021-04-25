@@ -86,7 +86,7 @@ function ViewItem(props) {
 				<>
 					{error.error && <ErrorText>{error.error}</ErrorText>}
 					<div className="left_container align-center">
-						<p className="big-font-size bold">{item.itemName}</p>
+						<p className="big-font-size bold ml-10">{item.itemName}</p>
 						<img
 							src={`/images/${item.itemImage}`}
 							className="mt-10"
@@ -119,6 +119,7 @@ function ViewItem(props) {
 								auth={auth}
 								setError={setError}
 								target={"ITEM"}
+								onFeedbackChange={getItem}
 							/>
 						)}
 					</div>
@@ -143,6 +144,10 @@ function ViewItem(props) {
 						<div className="flex flex-col ml-50 mt-20">
 							<p className="big-font-size bold">Description</p>
 							<p className="small-font-size">{item.description}</p>
+						</div>
+						<div className="flex flex-col ml-50 mt-20">
+							<p className="big-font-size bold">By : </p>
+							<p className="small-font-size">{item.shopkeeper.shopName}</p>
 						</div>
 						<div className="flex flex-row mt-20 align-center width100">
 							<p className="bold ml-50">Total orders : </p>

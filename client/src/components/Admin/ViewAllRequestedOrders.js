@@ -68,6 +68,7 @@ function ViewAllRequestedOrders(props) {
 	}
 
 	async function cancelOrderItemPack(index, indexIn) {
+		setError("");
 		const orderItemPackId = orders[index].orderItemPacks[indexIn]._id;
 		const res = await Axios.DELETE(`/itemOrder/${orderItemPackId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
@@ -80,6 +81,7 @@ function ViewAllRequestedOrders(props) {
 	}
 
 	async function cancelOrderItemPacks(index) {
+		setError("");
 		await Promise.all(
 			orders[index].orderItemPacks.map((orderItemPack) => {
 				if (orderItemPack.status !== STATUS.CANCELLED)
@@ -114,7 +116,7 @@ function ViewAllRequestedOrders(props) {
 
 		setOrders((prev) => {
 			const result = [...prev];
-			result[index].orderItemPacks.map((orderItemPack) => {
+			result[index].orderItemPacks.forEach((orderItemPack) => {
 				if (orderItemPack.status !== STATUS.CANCELLED) orderItemPack.status = status;
 			});
 			return result;

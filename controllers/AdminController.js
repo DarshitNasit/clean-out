@@ -265,7 +265,7 @@ async function getUsers(req, res) {
 			const pipeline = [
 				{
 					$match: {
-						$or: [
+						$and: [
 							{ $text: { $search: search } },
 							{ userName: new RegExp(pattern, "i") },
 						],

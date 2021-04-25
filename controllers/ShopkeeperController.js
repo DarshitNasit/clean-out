@@ -89,6 +89,14 @@ const getWorkers = async (req, res) => {
 			},
 			{ $unwind: "$workerUser" },
 			{
+				$lookup: {
+					from: "Location",
+					localField: "_id",
+					foreignField: "workerId",
+					as: "pincodes",
+				},
+			},
+			{
 				$project: {
 					workerUser: {
 						userName: "$workerUser.userName",
@@ -99,6 +107,7 @@ const getWorkers = async (req, res) => {
 						shopkeeperId: "$shopkeeperId",
 						profilePicture: "$profilePicture",
 						proofs: "$proofs",
+						pincodes: "$pincodes",
 					},
 				},
 			}
@@ -118,135 +127,6 @@ const getWorkers = async (req, res) => {
 		handleError(error);
 	}
 };
-
-// const getRequestedOrders = async (req, res) => {
-// 	try {
-// 		const shopkeeperId = req.params.shopkeeperId;
-// 		const lastKeyItemOrder = req.query.lastKeyItemOrder || null;
-// 		const lastKeyServiceOrder = req.query.lastKeyServiceOrder || null;
-// 		const ObjectId = mongoose.Types.ObjectId;
-
-// 		const shopkeeperUser = await UserModel.findById(shopkeeperId);
-// 		if (!shopkeeperUser) {
-// 			const message = "Shopkeeper not found";
-// 			return res.json(new Response(RESPONSE.FAILURE, { message }));
-// 		}
-
-// 		const pipelineItemOrders = [
-// 			{ $match: { shopkeeperId: ObjectId(shopkeeperId) } },
-// 			{
-// 				$lookup: {
-// 					from: "Item",
-// 					localField: "itemId",
-// 					foreignField: "_id",
-// 					as: "item",
-// 				},
-// 			},
-// 			{ $unwind: "$item" },
-// 			{ $group: { _id: "$orderId", orderItemPacks: { $push: "$$ROOT" } } },
-// 			{ $sort: { _id: 1 } },
-// 			{
-// 				$lookup: {
-// 					from: "ItemOrder",
-// 					localField: "_id",
-// 					foreignField: "_id",
-// 					as: "itemOrder",
-// 				},
-// 			},
-// 			{ $unwind: "$itemOrder" },
-// 			{ $limit: Number(process.env.LIMIT_ORDERS) },
-// 			{
-// 				$lookup: {
-// 					from: "User",
-// 					localField: "itemOrder.userId",
-// 					foreignField: "_id",
-// 					as: "user",
-// 				},
-// 			},
-// 			{ $unwind: "$user" },
-// 			{
-// 				$lookup: {
-// 					from: "Address",
-// 					localField: "itemOrder.userId",
-// 					foreignField: "_id",
-// 					as: "address",
-// 				},
-// 			},
-// 			{ $unwind: "$address" },
-// 			{
-// 				$project: {
-// 					itemOrder: {
-// 						placedDate: 1,
-// 						price: 1,
-// 					},
-// 					user: {
-// 						_id: 1,
-// 						userName: 1,
-// 						phone: 1,
-// 					},
-// 					address: {
-// 						society: 1,
-// 						area: 1,
-// 						pincode: 1,
-// 						city: 1,
-// 						state: 1,
-// 					},
-// 					orderItemPacks: 1,
-// 				},
-// 			},
-// 		];
-
-// 		if (lastKeyItemOrder)
-// 			pipelineItemOrders.splice(5, 0, {
-// 				$match: { _id: { $gt: ObjectId(lastKeyItemOrder) } },
-// 			});
-
-// 		const query = { shopkeeperId: ObjectId(shopkeeperId) };
-// 		if (lastKeyServiceOrder) query._id = { $gt: ObjectId(lastKeyServiceOrder) };
-
-// 		const pipelineServiceOrders = [
-// 			{ $match: query },
-// 			{ $limit: Number(process.env.LIMIT_ORDERS) },
-// 			{
-// 				$lookup: {
-// 					from: "Service",
-// 					localField: "serviceId",
-// 					foreignField: "_id",
-// 					as: "service",
-// 				},
-// 			},
-// 			{ $unwind: "$service" },
-// 			{
-// 				$lookup: {
-// 					from: "User",
-// 					localField: "userId",
-// 					foreignField: "_id",
-// 					as: "user",
-// 				},
-// 			},
-// 			{ $unwind: "$user" },
-// 			{
-// 				$lookup: {
-// 					from: "Address",
-// 					localField: "userId",
-// 					foreignField: "_id",
-// 					as: "address",
-// 				},
-// 			},
-// 			{ $unwind: "$address" },
-// 		];
-
-// 		const [itemOrders, serviceOrders] = await Promise.all([
-// 			OrderItemPackModel.aggregate(pipelineItemOrders),
-// 			ServiceOrderModel.aggregate(pipelineServiceOrders),
-// 		]);
-
-// 		const message = "Found orders";
-// 		res.json(new Response(RESPONSE.SUCCESS, { message, itemOrders, serviceOrders }));
-// 	} catch (error) {
-// 		handleError(error);
-// 	}
-// };
 
 const getRequestedOrders = async (req, res) => {
 	try {
@@ -489,7 +369,6 @@ const addWorker = async (req, res) => {
 			])
 		)[0];
 
-		console.log(worker);
 		if (worker.isDependent === "true") {
 			const message = "Worker is already under a shopkeeper";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
@@ -517,7 +396,7 @@ const updateShopkeeper = async (req, res) => {
 		const shopkeeperId = req.params.shopkeeperId;
 		const { userName, phone, password, newPassword } = req.body;
 		const { society, area, pincode, city, state } = req.body;
-		const { shopName } = req.body;
+		const { shopName, isAdmin } = req.body;
 		const files = req.files;
 		const proofs = [];
 
@@ -536,8 +415,8 @@ const updateShopkeeper = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		const isMatch = await bcrypt.compare(password, shopkeeperUser.password);
-		if (!isMatch) {
+		const isMatch = await bcrypt.compare(password || "", shopkeeperUser.password);
+		if (!isMatch && !isAdmin) {
 			if (files.proofs) await deleteFiles(proofs, "tempUploads");
 			const message = "Incorrect password";
 			return res.json(new Response(RESPONSE.FAILURE, { message }));

@@ -28,6 +28,11 @@ function Login(props) {
 		if (auth.isAuthenticated) history.goBack();
 	}, []);
 
+	function forgotPassword() {
+		setError("");
+		history.push("forgotPassword");
+	}
+
 	return (
 		<div className="card_container">
 			<h2 className="mb-10">Sign in to Clean Out</h2>
@@ -62,7 +67,13 @@ function Login(props) {
 								>
 									{formik.isSubmitting ? "Singing In" : "Sign In"}
 								</button>
-								<button className="btn btn-danger">Forgot Password</button>
+								<button
+									type="button"
+									className="btn btn-danger"
+									onClick={forgotPassword}
+								>
+									Forgot Password
+								</button>
 							</div>
 						</Form>
 					);

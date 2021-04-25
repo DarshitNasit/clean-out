@@ -58,6 +58,7 @@ function ViewAllRequestedOrders(props) {
 	}
 
 	async function cancelOrderItemPack(index, indexIn) {
+		setError("");
 		const orderItemPackId = orders[index].orderItemPacks[indexIn]._id;
 		const res = await Axios.DELETE(`/itemOrder/${orderItemPackId}`);
 		if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
@@ -70,6 +71,7 @@ function ViewAllRequestedOrders(props) {
 	}
 
 	async function cancelOrderItemPacks(index) {
+		setError("");
 		await Promise.all(
 			orders[index].orderItemPacks.map((orderItemPack) => {
 				if (orderItemPack.status !== STATUS.CANCELLED)
@@ -122,7 +124,7 @@ function ViewAllRequestedOrders(props) {
 		orders[index].orderItemPacks.map((orderItemPack) => {
 			if (orderItemPack.deliveredDate) date = orderItemPack.deliveredDate;
 		});
-		return date;
+		return date || new Date().toISOString().substr(0, 10);
 	}
 
 	async function pushToWorkerService(index) {
@@ -154,7 +156,7 @@ function ViewAllRequestedOrders(props) {
 								return (
 									<div key={index}>
 										{serviceOrder && (
-											<div className="flex flex-row btn-light mb-10 p-10 br-10 hover-pointer shadow">
+											<div className="flex flex-row btn-light mb-10 p-10 br-10 shadow">
 												<ViewServiceBar
 													serviceName={serviceOrder.service.serviceName}
 													serviceCategory={
@@ -185,18 +187,22 @@ function ViewAllRequestedOrders(props) {
 													</p>
 												</div>
 
-												<div className="width20 ml-50 flex flex-col">
-													Worker :{" "}
-													<Name
-														className="big-font-size bold"
-														isVerified={serviceOrder.worker.isVerified}
-													>
-														{serviceOrder.workerUser.userName}
-													</Name>
-													<p className="small-font-size">
-														{serviceOrder.workerUser.phone}
-													</p>
-												</div>
+												{auth.user.role === ROLE.SHOPKEEPER && (
+													<div className="width20 ml-50 flex flex-col">
+														Worker :{" "}
+														<Name
+															className="big-font-size bold"
+															isVerified={
+																serviceOrder.worker.isVerified
+															}
+														>
+															{serviceOrder.workerUser.userName}
+														</Name>
+														<p className="small-font-size">
+															{serviceOrder.workerUser.phone}
+														</p>
+													</div>
+												)}
 
 												<div className="flex flex-col ml-auto">
 													<button
@@ -227,14 +233,19 @@ function ViewAllRequestedOrders(props) {
 
 										{itemOrder && (
 											<div className="flex flex-row btn-light br-10 mb-10 p-10 shadow">
-												<div className="flex flex-col width40">
+												<div className="flex flex-col width60">
 													{itemOrder.orderItemPacks.map(
 														(orderItemPack, indexIn) => (
 															<div
 																key={indexIn}
 																className="flex flex-row mb-10"
 															>
-																<div className="flex flex-col">
+																<div
+																	className="flex flex-col"
+																	style={{
+																		maxWidth: "70%",
+																	}}
+																>
 																	<div className="flex flex-row">
 																		<p
 																			className="bold hover-pointer"

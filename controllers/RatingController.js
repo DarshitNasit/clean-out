@@ -147,8 +147,26 @@ const updateRating = async (req, res) => {
 			return res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
 
-		rating.ratingValue = req.body.ratingValue;
-		rating.description = req.body.description;
+		const target = req.body.target;
+		const targetId = rating.targetId;
+		const ratingValue = req.body.ratingValue;
+		const description = req.body.description;
+
+		if (target === "SERVICE") {
+			const workerService = await WorkerServiceModel.findById(targetId);
+			workerService.ratingValue =
+				workerService.ratingValue +
+				(ratingValue - rating.ratingValue) / workerService.ratingCount;
+			await workerService.save();
+		} else {
+			const item = await ItemModel.findById(targetId);
+			item.ratingValue =
+				item.ratingValue + (ratingValue - rating.ratingValue) / item.ratingCount;
+			await item.save();
+		}
+
+		rating.ratingValue = ratingValue;
+		rating.description = description;
 		await rating.save();
 
 		const message = "Updated rating";

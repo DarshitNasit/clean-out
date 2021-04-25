@@ -41,11 +41,14 @@ const getItem = async (req, res) => {
 const getItemWithRatings = async (req, res) => {
 	try {
 		const itemId = req.params.itemId;
-		const item = await ItemModel.findById(itemId);
+		let item = await ItemModel.findById(itemId);
 		if (!item) {
 			const message = "Item not found";
 			res.json(new Response(RESPONSE.FAILURE, { message }));
 		}
+
+		const shopkeeper = await ShopkeeperModel.findById(item.shopkeeperId);
+		item = { ...item._doc, shopkeeper };
 
 		const ratings = await getRatingsWithUserName(itemId);
 		const message = "Item found";
@@ -93,7 +96,15 @@ const getItemsForStore = async (req, res) => {
 
 		if (search) {
 			const pattern = `\w*${search}\w*`;
-			query.$or = [{ $text: { $search: search } }, { itemName: new RegExp(pattern, "i") }];
+			query.$and = [
+				{ $text: { $search: search } },
+				{
+					$or: [
+						{ itemName: new RegExp(pattern, "i") },
+						{ description: new RegExp(pattern, "i") },
+					],
+				},
+			];
 		}
 		sort[sortBy] = sortBy === "price" ? 1 : -1;
 

@@ -248,7 +248,6 @@ function Register(props) {
 										{(fieldArrayProps) => {
 											const { push, remove, form } = fieldArrayProps;
 											const { pincodes } = form.values;
-											console.log(pincodes);
 
 											return (
 												<div className="flex flex-col">

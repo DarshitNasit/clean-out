@@ -8,6 +8,8 @@ export {
 	coadminFirewall,
 	dataURLtoFile,
 	isEmptyObject,
+	scrollToBottom,
+	scrollToTop,
 	setAuthToken,
 	stringToArray,
 	timeout,
@@ -34,7 +36,7 @@ function buildFormData(data) {
 }
 
 async function coadminFirewall(auth, userId, history, setError, cb, ...args) {
-	if (auth.user.role === ROLE.ADMIN) cb(...args);
+	if (auth.user.role === ROLE.ADMIN) return cb(...args);
 
 	const res = await Axios.GET(`/user/${userId}`);
 	if (res.success === RESPONSE.FAILURE) return setError(res.data.message);
@@ -57,6 +59,14 @@ function dataURLtoFile(dataURL, filename) {
 
 function isEmptyObject(value) {
 	return value && Object.keys(value).length === 0 && value.constructor === Object;
+}
+
+function scrollToBottom() {
+	window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+}
+
+function scrollToTop() {
+	window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function setAuthToken(token) {

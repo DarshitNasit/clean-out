@@ -48,40 +48,38 @@ function ViewAllItems(props) {
 		<div className="flex flex-col min-h80 btn-main width100">
 			{!loading && (
 				<>
-					{items.length > 0 && (
-						<>
-							{error.error && <ErrorText>{error.error}</ErrorText>}
-							<div className="width80 ml-auto mr-auto flex flex-col">
-								<div className="flex flex-row p-10 align-center">
-									<p className="bold large-font-size">Items</p>
-									<button className="btn btn-violet ml-auto" onClick={addItem}>
-										Add Items
-									</button>
-								</div>
-								<div className="flex flex-row flex-wrap">
-									{items.map((item) => (
-										<Product
-											key={item._id}
-											item={item}
-											className="btn-light mt-20 hover-pointer ml-auto mr-auto"
-											onClick={() => history.push(`/viewItem/${item._id}`)}
-										/>
-									))}
-								</div>
-								{items.length > 0 && (
-									<Pagination
-										itemsPerPage="10"
-										totalItems={totalItems}
-										currentPage={page}
-										onPageChange={getItems}
-										cut={3}
-										className="mt-20 mb-50"
-									/>
-								)}
-							</div>
-						</>
-					)}
-					{!items.length && <p className="ml-auto mr-auto">No items found</p>}
+					{error.error && <ErrorText>{error.error}</ErrorText>}
+					<div className="width80 ml-auto mr-auto flex flex-col">
+						<div className="flex flex-row p-10 align-center">
+							<p className="bold large-font-size">Items</p>
+							<button className="btn btn-violet ml-auto" onClick={addItem}>
+								Add Items
+							</button>
+						</div>
+						<div className="flex flex-row flex-wrap ">
+							{items.map((item) => (
+								<Product
+									key={item._id}
+									item={item}
+									className="btn-main mt-20 hover-pointer ml-auto mr-auto"
+									onClick={() => history.push(`/viewItem/${item._id}`)}
+									style={{ maxWidth: "18%", textAlign: "center" }}
+								/>
+							))}
+						</div>
+						{items.length > 0 ? (
+							<Pagination
+								itemsPerPage="10"
+								totalItems={totalItems}
+								currentPage={page}
+								onPageChange={getItems}
+								cut={3}
+								className="mt-20 mb-50"
+							/>
+						) : (
+							<p className="ml-auto mr-auto">No items found</p>
+						)}
+					</div>
 				</>
 			)}
 		</div>

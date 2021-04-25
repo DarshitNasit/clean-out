@@ -27,12 +27,10 @@ function Home(props) {
 					{error.error && <ErrorText>{error.error}</ErrorText>}
 					<div className="home_container">
 						<img className="home_image" src={"/images/Home.jpg"} alt="Home" />
-						<div>
-							<span className="first_row">Clean Out</span>
-							<span className="sec_row">
-								You know what would make house cleaning more fun? A servant
-							</span>
-						</div>
+						<p className="first_row">Clean Out</p>
+						<p className="sec_row">
+							You know what would make house cleaning more fun? A servant
+						</p>
 					</div>
 					<div className="btn-main">
 						<p className="hugh-font-size mt-20 ml-50">Cleaning Categories</p>
@@ -55,7 +53,7 @@ function Home(props) {
 						</div>
 					</div>
 
-					<div className="white btn-violet">
+					<div className="white btn-violet mt-20">
 						<p className="hugh-font-size mt-20 ml-50">Cleaning Products</p>
 						<div className="cleaning_card_container">
 							{home.items.map((item) => (
