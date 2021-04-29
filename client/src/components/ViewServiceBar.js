@@ -10,6 +10,8 @@ function ViewServiceBar(props) {
 		workerName,
 		status,
 		onNameClick,
+		placedDate,
+		deliveredDate,
 		className,
 		...rest
 	} = props;
@@ -30,9 +32,15 @@ function ViewServiceBar(props) {
 
 			{description && <p className="small-font-size">Description : {description}</p>}
 
-			<div className="flex flex-row mt-auto">
-				{price && <p className="">Price : {price}</p>}
-				{status && <p className="ml-auto">Status : {status}</p>}
+			<div className="flex flex-row mt-auto justify-between">
+				<div className="flex flex-col">
+					{price && <p>Price : {price}</p>}
+					{placedDate && <p>Placed Date : {placedDate}</p>}
+				</div>
+				<div className="flex flex-col text-right">
+					{status && <p>Status : {status}</p>}
+					{deliveredDate && <p>Delivered Date : {deliveredDate}</p>}
+				</div>
 			</div>
 		</div>
 	);

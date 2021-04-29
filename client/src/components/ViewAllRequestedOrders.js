@@ -167,6 +167,12 @@ function ViewAllRequestedOrders(props) {
 													)}
 													price={serviceOrder.serviceOrder.price}
 													status={serviceOrder.serviceOrder.status}
+													placedDate={
+														serviceOrder.serviceOrder.placedDate
+													}
+													deliveredDate={
+														serviceOrder.serviceOrder.deliveredDate
+													}
 													onNameClick={() => pushToWorkerService(index)}
 													className="width40"
 												/>

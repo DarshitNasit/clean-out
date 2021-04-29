@@ -243,7 +243,7 @@ function ViewServiceOrder(props) {
 								<p>Order ID : {serviceOrder._id}</p>
 								<p>Order Date : {serviceOrder.placedDate}</p>
 								{serviceOrder.deliveredDate && (
-									<p>Delivered Date : {serviceOrder.placedDate}</p>
+									<p>Delivered Date : {serviceOrder.deliveredDate}</p>
 								)}
 								<p>Status : {serviceOrder.status}</p>
 							</div>
